@@ -1,0 +1,3 @@
+wwwroot\dashboard.html
+wwwroot\registro.html
+wwwroot\index.html

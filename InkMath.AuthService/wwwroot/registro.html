@@ -1,0 +1,175 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InkMath - Registro de Usuario</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #1a202c;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #38a169;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+            .btn:hover {
+                background: #2f855a;
+            }
+
+        .link {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+
+            .link a {
+                color: #3182ce;
+                text-decoration: none;
+                font-weight: 600;
+            }
+
+        .alert {
+            display: none;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .alert-error {
+            background: #fed7d7;
+            color: #9b2c2c;
+        }
+
+        .alert-success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Crear Cuenta</h2>
+        <div id="alertBox" class="alert"></div>
+        <form id="registroForm">
+            <div class="form-group">
+                <label>Nombre Completo</label>
+                <input type="text" id="nombre" required>
+            </div>
+            <div class="form-group">
+                <label>Correo Electrónico</label>
+                <input type="email" id="email" required>
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="password" required>
+            </div>
+            <div class="form-group">
+                <label>Documento de Identidad (PDF/JPEG)</label>
+                <input type="file" id="documento" accept=".pdf,.jpeg,.jpg" required>
+            </div>
+            <input type="hidden" id="mfaToken" value="MFA-TOKEN-VALIDADO">
+            <button type="button" class="btn" onclick="registrarUsuario()">Completar Registro</button>
+        </form>
+        <div class="link">
+            ¿Ya tienes una cuenta? <a href="index.html">Inicia sesión</a>
+        </div>
+    </div>
+
+    <script>
+        async function registrarUsuario() {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.style.display = 'none';
+
+            const fileInput = document.getElementById('documento');
+            if (!fileInput.files.length) {
+                alertBox.className = 'alert alert-error';
+                alertBox.innerText = 'Selecciona un archivo PDF o JPEG.';
+                alertBox.style.display = 'block';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("Nombre", document.getElementById('nombre').value);
+            formData.append("Email", document.getElementById('email').value);
+            formData.append("Password", document.getElementById('password').value);
+            formData.append("DocumentoIdentidad", fileInput.files[0]);
+            formData.append("MfaToken", document.getElementById('mfaToken').value);
+
+            try {
+                const res = await fetch('/api/auth/registro', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                if (res.ok) {
+                    alertBox.className = 'alert alert-success';
+                    alertBox.innerText = 'Registro completado con éxito. Redirigiendo al login...';
+                    alertBox.style.display = 'block';
+                    setTimeout(() => window.location.href = 'index.html', 2000);
+                } else {
+                    alertBox.className = 'alert alert-error';
+                    alertBox.innerText = data.mensaje || 'Error al registrar el usuario.';
+                    alertBox.style.display = 'block';
+                }
+            } catch (err) {
+                alertBox.className = 'alert alert-error';
+                alertBox.innerText = 'Error de conexión con el servidor.';
+                alertBox.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

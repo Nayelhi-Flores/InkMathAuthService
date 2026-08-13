@@ -1,0 +1,159 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InkMath - Iniciar Sesión</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .card {
+            background: white;
+            padding: 32px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #1a202c;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #3182ce;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+            .btn:hover {
+                background: #2b6cb0;
+            }
+
+        .link {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+
+            .link a {
+                color: #3182ce;
+                text-decoration: none;
+                font-weight: 600;
+            }
+
+        .alert {
+            display: none;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .alert-error {
+            background: #fed7d7;
+            color: #9b2c2c;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>InkMath Auth</h2>
+        <div id="alertBox" class="alert alert-error"></div>
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Correo Electrónico</label>
+                <input type="email" id="email" placeholder="sofia@inkmath.edu" required>
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button type="button" class="btn" onclick="iniciarSesion()">Ingresar</button>
+        </form>
+        <div class="link">
+            ¿No tienes una cuenta? <a href="registro.html">Regístrate aquí</a>
+        </div>
+    </div>
+
+    <script>
+        async function iniciarSesion() {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.style.display = 'none';
+
+            const payload = {
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value
+            };
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.status === 429) {
+                    alertBox.innerText = 'Demasiados intentos fallidos. Por favor, espera un minuto e intenta de nuevo.';
+                    alertBox.style.display = 'block';
+                    return;
+                }
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    // Guardar datos temporales en sessionStorage
+                    sessionStorage.setItem('usuarioNombre', data.nombre || 'Usuario');
+                    sessionStorage.setItem('usuarioId', data.usuarioId);
+                    window.location.href = 'dashboard.html';
+                } else {
+                    alertBox.innerText = data.mensaje || 'Credenciales incorrectas.';
+                    alertBox.style.display = 'block';
+                }
+            } catch (err) {
+                alertBox.innerText = 'Error de conexión con la API.';
+                alertBox.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

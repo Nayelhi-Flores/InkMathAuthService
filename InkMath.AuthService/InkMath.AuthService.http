@@ -1,0 +1,6 @@
+@InkMath.AuthService_HostAddress = http://localhost:5225
+
+GET {{InkMath.AuthService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
