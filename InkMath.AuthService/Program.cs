@@ -1,23 +1,69 @@
+using System.Text;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using InkMath.AuthService.Data;
 using InkMath.AuthService.Services;
-using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Inyección de SQL Server (EF Core)
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServerConnection")));
+// 1. Selector de Base de Datos Dinámico (PostgreSQL vs SQL Server)
+var dbProvider = builder.Configuration["DatabaseProvider"] ?? "SqlServer";
 
-// Inyección de Servicio de Auditoría (MongoDB)
+if (dbProvider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddDbContext<AplicationDbContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("PostgresConnection")));
+}
+else
+{
+    builder.Services.AddDbContext<AplicationDbContext>(options =>
+        options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServerConnection")));
+}
+
+// 2. Inyección de Servicios del Dominio
 builder.Services.AddSingleton<IAuditoriaService, AuditoriaService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<ISeedRepository, SeedRepository>();
+
+// 3. Autenticación JWT (Soporta Header Authorization y Cookies HttpOnly)
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "ClaveUltraSecretaDePrueba1234567890!";
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "InkMathAPI",
+            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "InkMathClient",
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                if (context.Request.Cookies.ContainsKey("jwt_session"))
+                {
+                    context.Token = context.Request.Cookies["jwt_session"];
+                }
+                return Task.CompletedTask;
+            }
+        };
+    });
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
 
+// 4. Rate Limiter
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -40,7 +86,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseRateLimiter();
+app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 app.MapHealthChecks("/health");
 

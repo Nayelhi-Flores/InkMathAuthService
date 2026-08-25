@@ -17,6 +17,16 @@
   },
   {
     "ContainingType": "InkMath.AuthService.Controllers.AuthController",
+    "Method": "Logout",
+    "RelativePath": "api/Auth/logout",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.AuthController",
     "Method": "Registrar",
     "RelativePath": "api/Auth/registro",
     "HttpMethod": "POST",
@@ -25,6 +35,11 @@
     "Parameters": [
       {
         "Name": "Nombre",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Apellido",
         "Type": "System.String",
         "IsRequired": false
       },
@@ -46,6 +61,43 @@
       {
         "Name": "MfaToken",
         "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.TransaccionesController",
+    "Method": "CrearTransaccion",
+    "RelativePath": "api/Transacciones/crear",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "InkMath.AuthService.DTOs.CrearTransaccionMonedaDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.TransaccionesController",
+    "Method": "InyectarDatosMasivos",
+    "RelativePath": "api/Transacciones/seed-data",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "cantidad",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "estudianteId",
+        "Type": "System.Int64",
         "IsRequired": false
       }
     ],

@@ -15,6 +15,10 @@ namespace InkMath.AuthService.Models
         public string Nombre { get; set; } = string.Empty;
 
         [Required]
+        [Column("apellido")]
+        public string Apellido { get; set; } = string.Empty;
+
+        [Required]
         [Column("email")]
         public string Email { get; set; } = string.Empty;
 
@@ -24,5 +28,8 @@ namespace InkMath.AuthService.Models
 
         [Column("role_id")]
         public long RoleId { get; set; } = 3;
+
+        [Column("creado_en")]
+        public DateTimeOffset CreadoEn { get; set; } = DateTimeOffset.UtcNow;
     }
 }

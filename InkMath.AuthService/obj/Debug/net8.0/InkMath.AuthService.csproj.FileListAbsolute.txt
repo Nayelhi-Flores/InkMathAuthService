@@ -159,3 +159,7 @@ C:\Users\Kathe\source\repos\InkMath.AuthService\InkMath.AuthService\obj\Debug\ne
 C:\Users\Kathe\source\repos\InkMath.AuthService\InkMath.AuthService\obj\Debug\net8.0\InkMath.AuthService.pdb
 C:\Users\Kathe\source\repos\InkMath.AuthService\InkMath.AuthService\obj\Debug\net8.0\InkMath.AuthService.genruntimeconfig.cache
 C:\Users\Kathe\source\repos\InkMath.AuthService\InkMath.AuthService\obj\Debug\net8.0\ref\InkMath.AuthService.dll
+C:\Users\Kathe\source\repos\InkMath.AuthService\InkMath.AuthService\obj\Debug\net8.0\InkMath.AuthService.sourcelink.json
+C:\Users\Kathe\source\repos\InkMath.AuthService\InkMath.AuthService\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+C:\Users\Kathe\source\repos\InkMath.AuthService\InkMath.AuthService\bin\Debug\net8.0\Npgsql.dll
+C:\Users\Kathe\source\repos\InkMath.AuthService\InkMath.AuthService\bin\Debug\net8.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll

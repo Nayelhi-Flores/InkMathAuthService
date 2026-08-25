@@ -15,6 +15,7 @@
             "multipart/form-data": {
               "schema": {
                 "required": [
+                  "Apellido",
                   "DocumentoIdentidad",
                   "Email",
                   "MfaToken",
@@ -24,6 +25,9 @@
                 "type": "object",
                 "properties": {
                   "Nombre": {
+                    "type": "string"
+                  },
+                  "Apellido": {
                     "type": "string"
                   },
                   "Email": {
@@ -45,6 +49,9 @@
               },
               "encoding": {
                 "Nombre": {
+                  "style": "form"
+                },
+                "Apellido": {
                   "style": "form"
                 },
                 "Email": {
@@ -101,6 +108,81 @@
         }
       }
     },
+    "/api/Auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Transacciones/crear": {
+      "post": {
+        "tags": [
+          "Transacciones"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearTransaccionMonedaDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearTransaccionMonedaDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearTransaccionMonedaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Transacciones/seed-data": {
+      "post": {
+        "tags": [
+          "Transacciones"
+        ],
+        "parameters": [
+          {
+            "name": "cantidad",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50000
+            }
+          },
+          {
+            "name": "estudianteId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/WeatherForecast": {
       "get": {
         "tags": [
@@ -143,6 +225,20 @@
   },
   "components": {
     "schemas": {
+      "CrearTransaccionMonedaDto": {
+        "type": "object",
+        "properties": {
+          "tipoTransaccionId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "monto": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false
+      },
       "LoginDto": {
         "required": [
           "email",

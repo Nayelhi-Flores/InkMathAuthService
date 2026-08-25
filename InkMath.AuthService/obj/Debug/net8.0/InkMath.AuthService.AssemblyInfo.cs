@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("InkMath.AuthService")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c821d73d2c59322e9886ce3eea884602625a1220")]
 [assembly: System.Reflection.AssemblyProductAttribute("InkMath.AuthService")]
 [assembly: System.Reflection.AssemblyTitleAttribute("InkMath.AuthService")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

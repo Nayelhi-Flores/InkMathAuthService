@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>InkMath - Dashboard Provisional</title>
+    <title>InkMath - Dashboard de Monedas</title>
     <style>
         * {
             box-sizing: border-box;
@@ -18,46 +18,107 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            padding: 20px;
         }
 
         .card {
             background: white;
-            padding: 40px;
+            padding: 30px;
             border-radius: 12px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-            text-align: center;
-            max-width: 500px;
             width: 100%;
+            max-width: 500px;
+            text-align: center;
         }
 
         h1 {
             color: #2b6cb0;
             margin-bottom: 12px;
+            font-size: 24px;
         }
 
         p {
             color: #4a5568;
-            margin-bottom: 24px;
-            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            text-align: left;
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #2d3748;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            color: white;
+        }
+
+        .btn-primary {
+            background: #3182ce;
+        }
+
+        .btn-success {
+            background: #38a169;
         }
 
         .btn-logout {
-            padding: 10px 20px;
             background: #e53e3e;
-            color: white;
-            border: none;
+            margin-top: 20px;
+        }
+
+        .alert {
+            display: none;
+            padding: 10px;
             border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .alert-info {
+            background: #ebf8ff;
+            color: #2c5282;
         }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>¡Bienvenido a InkMath!</h1>
+        <h1>Dashboard de Transacciones</h1>
         <p id="welcomeMsg">Cargando datos del usuario...</p>
-        <p>Sesión autenticada correctamente en la Web API (.NET 8).</p>
-        <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+
+        <div id="alertBox" class="alert alert-info"></div>
+
+        <!-- Formulario de Transacción Individual -->
+        <div class="form-group">
+            <label>Monto de Monedas</label>
+            <input type="number" id="monto" value="50">
+        </div>
+        <button class="btn btn-primary" onclick="registrarTransaccion()">Registrar Transacción Individual</button>
+
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #e2e8f0;">
+
+        <!-- Botón de Prueba de Carga Masiva -->
+        <button class="btn btn-success" onclick="ejecutarSeedData()">Ejecutar Stress Test (50,000 Registros)</button>
+
+        <button class="btn btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
     </div>
 
     <script>
@@ -67,7 +128,35 @@
         if (!nombre || !id) {
             window.location.href = 'index.html';
         } else {
-            document.getElementById('welcomeMsg').innerText = `Hola, ${nombre} (ID de usuario: ${id}).`;
+            document.getElementById('welcomeMsg').innerText = `Estudiante: ${nombre} (ID: ${id})`;
+        }
+
+        async function registrarTransaccion() {
+            const alertBox = document.getElementById('alertBox');
+            const monto = document.getElementById('monto').value;
+
+            const res = await fetch('/api/transacciones/crear', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tipoTransaccionId: 1, monto: parseInt(monto) })
+            });
+
+            const data = await res.json();
+            alertBox.innerText = data.mensaje || 'Transacción enviada.';
+            alertBox.style.display = 'block';
+        }
+
+        async function ejecutarSeedData() {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.innerText = 'Inyectando 50,000 registros mediante SqlBulkCopy...';
+            alertBox.style.display = 'block';
+
+            const res = await fetch(`/api/transacciones/seed-data?cantidad=50000&estudianteId=${id}`, {
+                method: 'POST'
+            });
+
+            const data = await res.json();
+            alertBox.innerText = `${data.mensaje} Tiempo: ${data.tiempoEjecucion}`;
         }
 
         function cerrarSesion() {
