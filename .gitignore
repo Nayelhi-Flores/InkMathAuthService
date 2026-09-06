@@ -1,0 +1,12 @@
+# Archivos de configuración con credenciales
+.env
+*.env
+
+# Archivos pesados/locales subidos
+Uploads/
+**/Uploads/*
+
+# Carpetas de compilación de .NET
+bin/
+obj/
+.vs/

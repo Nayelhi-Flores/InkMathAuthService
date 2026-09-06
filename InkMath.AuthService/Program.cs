@@ -28,6 +28,7 @@ builder.Services.AddSingleton<IAuditoriaService, AuditoriaService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ISeedRepository, SeedRepository>();
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 
 // 3. Autenticación JWT (Soporta Header Authorization y Cookies HttpOnly)
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "ClaveUltraSecretaDePrueba1234567890!";
@@ -90,6 +91,19 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/api/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var response = new
+        {
+            status = report.Status.ToString(),
+            timestamp = DateTime.UtcNow,
+            service = "InkMath Auth Service API"
+        };
+        await context.Response.WriteAsJsonAsync(response);
+    }
+});
 
 app.Run();

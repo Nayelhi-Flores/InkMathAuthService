@@ -17,11 +17,13 @@ namespace InkMath.AuthService.DTOs
         [Required, MinLength(8)]
         public string Password { get; set; } = string.Empty;
 
-        [Required]
-        public IFormFile DocumentoIdentidad { get; set; } = null!;
+        [Range(2, 3, ErrorMessage = "El rol seleccionado no es válido")]
+        public int RoleId { get; set; } = 3;
 
-        [Required]
-        public string MfaToken { get; set; } = string.Empty; // Token de validación (Captcha/MFA)
+        [Range(typeof(bool), "true", "true", ErrorMessage = "Debes aceptar los Términos y Condiciones.")]
+        public bool AceptoTerminos { get; set; }
+
+        public string? Website { get; set; }
     }
 
     public class LoginDto

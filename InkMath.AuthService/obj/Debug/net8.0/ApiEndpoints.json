@@ -54,12 +54,17 @@
         "IsRequired": false
       },
       {
-        "Name": "DocumentoIdentidad",
-        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "Name": "RoleId",
+        "Type": "System.Int32",
         "IsRequired": false
       },
       {
-        "Name": "MfaToken",
+        "Name": "AceptoTerminos",
+        "Type": "System.Boolean",
+        "IsRequired": false
+      },
+      {
+        "Name": "Website",
         "Type": "System.String",
         "IsRequired": false
       }
