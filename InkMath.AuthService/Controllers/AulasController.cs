@@ -136,13 +136,30 @@ namespace InkMath.AuthService.Controllers
                 maestroId,
                 dto.Titulo,
                 dto.TipoRecursoId,
-                referenciaFinal
+                referenciaFinal,
+                dto.AulaIds
             );
 
             if (!exito)
                 return BadRequest(new { mensaje = msg });
 
             return Ok(recursoDto);
+        }
+
+        [HttpPost("recursos/asignar-aulas")]
+        [Authorize(Roles = "2")] // Exclusivo para rol Maestro
+        public async Task<IActionResult> AsignarRecursoAAulas([FromBody] AsignarRecursoAulasDto dto)
+        {
+            long maestroId = ObtenerUsuarioIdDesdeClaim();
+            if (maestroId == 0)
+                return Unauthorized(new { mensaje = "Token inválido o expirado." });
+
+            var (exito, mensaje) = await _aulaService.AsignarRecursoAAulasAsync(maestroId, dto.RecursoId, dto.AulaIds);
+
+            if (!exito)
+                return BadRequest(new { mensaje });
+
+            return Ok(new { mensaje });
         }
 
         [HttpPost("vincular")]
@@ -173,14 +190,21 @@ namespace InkMath.AuthService.Controllers
         }
 
         [HttpGet("{aulaId:long}/recursos")]
-        [Authorize]
+        [Authorize(Roles = "2,3")]
         public async Task<IActionResult> ObtenerRecursosDeAula(long aulaId)
         {
             long usuarioId = ObtenerUsuarioIdDesdeClaim();
             if (usuarioId == 0)
                 return Unauthorized(new { mensaje = "Token inválido o expirado." });
 
-            var recursos = await _aulaService.ObtenerRecursosPorAulaAsync(aulaId);
+            string rolId = User.FindFirst(ClaimTypes.Role)?.Value
+                ?? User.FindFirst("role")?.Value
+                ?? string.Empty;
+
+            if (string.IsNullOrEmpty(rolId))
+                return Forbid();
+
+            var recursos = await _aulaService.ObtenerRecursosPorAulaAsync(aulaId, usuarioId, rolId);
             return Ok(recursos);
         }
 

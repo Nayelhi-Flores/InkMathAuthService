@@ -3,6 +3,7 @@ using InkMath.AuthService.DTOs;
 using InkMath.AuthService.Models;
 
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using System.Security.Cryptography;
 
 namespace InkMath.AuthService.Services
@@ -15,10 +16,11 @@ namespace InkMath.AuthService.Services
         Task<List<AulaDto>> ObtenerAulasPorUsuarioAsync(long usuarioId, string rolNombre);
         Task<(bool Exito, string Mensaje)> EliminarAulaLogicoAsync(long aulaId, long maestroId);
         Task<(bool exito, string mensaje)> ActualizarAulaAsync(long aulaId, long maestroId, string nuevoNombre);
-        Task<(bool Exito, string Mensaje, RecursoResponseDto? Recurso)> AgregarRecursoAsync(long maestroId,string titulo,long tipoRecursoId,string referencia);
+        Task<(bool Exito, string Mensaje, RecursoResponseDto? Recurso)> AgregarRecursoAsync(long maestroId,string titulo,long tipoRecursoId,string referencia, List<long>? aulaIds = null);
         Task<RespuestaPaginadaDto<AulaResponseDto>> ObtenerAulasPaginadasPorMaestroAsync(long maestroId, ConsultaAulasPaginadaDto dto);
         Task<RespuestaPaginadaDto<RecursoResponseDto>> ObtenerRecursosPorMaestroPaginadosAsync(long maestroId, ConsultaRecursosPaginadaDto dto);
-        Task<List<RecursoResponseDto>> ObtenerRecursosPorAulaAsync(long aulaId);
+        Task<List<RecursoResponseDto>> ObtenerRecursosPorAulaAsync(long aulaId, long usuarioId, string rolId);
+        Task<(bool Exito, string Mensaje)> AsignarRecursoAAulasAsync(long maestroId, List<long> recursoIds, List<long> aulaIds);
     }
 
     public class AulaService : IAulaService
@@ -271,7 +273,7 @@ namespace InkMath.AuthService.Services
             return (true, "El aula ha sido eliminada exitosamente.");
         }
 
-        public async Task<(bool Exito, string Mensaje, RecursoResponseDto? Recurso)> AgregarRecursoAsync(long maestroId,string titulo,long tipoRecursoId,string referencia)
+        public async Task<(bool Exito, string Mensaje, RecursoResponseDto? Recurso)> AgregarRecursoAsync(long maestroId,string titulo,long tipoRecursoId,string referencia, List<long>? aulaIds = null)
         {
             if (string.IsNullOrWhiteSpace(titulo))
                 return (false, "El título del recurso es obligatorio.", null);
@@ -293,6 +295,29 @@ namespace InkMath.AuthService.Services
 
             _context.Recursos.Add(nuevoRecurso);
             await _context.SaveChangesAsync();
+
+            // Si se enviaron aulas
+            if (aulaIds != null && aulaIds.Any())
+            {
+                var aulasValidasIds = await _context.Aulas
+                    .AsNoTracking()
+                    .Where(a => aulaIds.Contains(a.Id) && a.MaestroId == maestroId && a.EstaActivo)
+                    .Select(a => a.Id)
+                    .ToListAsync();
+
+                if (aulasValidasIds.Any())
+                {
+                    var asignaciones = aulasValidasIds.Select(aId => new AulaRecurso
+                    {
+                        AulaId = aId,
+                        RecursoId = nuevoRecurso.Id,
+                        AsignadoEn = DateTime.UtcNow
+                    });
+
+                    _context.AulasRecursos.AddRange(asignaciones);
+                    await _context.SaveChangesAsync();
+                }
+            }
 
             var dtoRespuesta = new RecursoResponseDto(
                 nuevoRecurso.Id,
@@ -346,31 +371,109 @@ namespace InkMath.AuthService.Services
             };
         }
 
-        public async Task<List<RecursoResponseDto>> ObtenerRecursosPorAulaAsync(long aulaId)
+        public async Task<List<RecursoResponseDto>> ObtenerRecursosPorAulaAsync(long aulaId, long usuarioId, string rolId)
         {
-            // Obtener el ID del maestro dueño de esa aula
-            var maestroId = await _context.Aulas
-                .AsNoTracking()
-                .Where(a => a.Id == aulaId && a.EstaActivo)
-                .Select(a => a.MaestroId)
-                .FirstOrDefaultAsync();
+            bool perteneceAlAula = false;
 
-            if (maestroId == 0)
+            if (rolId == "2") // Maestro
+            {
+                perteneceAlAula = await _context.Aulas
+                    .AsNoTracking()
+                    .AnyAsync(a => a.Id == aulaId && a.MaestroId == usuarioId && a.EstaActivo);
+            }
+            else if (rolId == "3") // Estudiante
+            {
+                perteneceAlAula = await _context.AulaEstudiantes
+                    .AsNoTracking()
+                    .AnyAsync(ae => ae.AulaId == aulaId && ae.EstudianteId == usuarioId && ae.Aula.EstaActivo);
+            }
+
+            // Si el usuario no pertenece a la clase o no tiene un rol válido, se retorna la lista vacía
+            if (!perteneceAlAula)
                 return new List<RecursoResponseDto>();
 
-            // Retornar los recursos creados por dicho maestro
-            return await _context.Recursos
+            // Consultar directamente la tabla intermedia 'aulas_recursos'
+            return await _context.AulasRecursos
                 .AsNoTracking()
-                .Where(r => r.MaestroId == maestroId)
-                .OrderByDescending(r => r.CreadoEn)
-                .Select(r => new RecursoResponseDto(
-                    r.Id,
-                    r.Titulo,
-                    r.TipoRecursoId,
-                    r.Referencia,
-                    r.CreadoEn
+                .Where(ar => ar.AulaId == aulaId)
+                .OrderByDescending(ar => ar.AsignadoEn)
+                .Select(ar => new RecursoResponseDto(
+                    ar.Recurso.Id,
+                    ar.Recurso.Titulo,
+                    ar.Recurso.TipoRecursoId,
+                    ar.Recurso.Referencia,
+                    ar.Recurso.CreadoEn
                 ))
                 .ToListAsync();
+        }
+
+        public async Task<(bool Exito, string Mensaje)> AsignarRecursoAAulasAsync(long maestroId, List<long> recursoIds,List<long> aulaIds)
+        {
+            if (recursoIds == null || !recursoIds.Any())
+                return (false, "Debe proporcionar al menos un ID de recurso.");
+
+            if (aulaIds == null || !aulaIds.Any())
+                return (false, "Debe proporcionar al menos un ID de aula.");
+
+            // 1. Obtener solo los recursos válidos pertenecientes al maestro
+            var recursosValidosIds = await _context.Recursos
+                .AsNoTracking()
+                .Where(r => recursoIds.Contains(r.Id) && r.MaestroId == maestroId)
+                .Select(r => r.Id)
+                .ToListAsync();
+
+            if (!recursosValidosIds.Any())
+                return (false, "Ninguno de los recursos especificados es válido o pertenece al maestro.");
+
+            // 2. Obtener solo las aulas válidas y activas pertenecientes al maestro
+            var aulasValidasIds = await _context.Aulas
+                .AsNoTracking()
+                .Where(a => aulaIds.Contains(a.Id) && a.MaestroId == maestroId && a.EstaActivo)
+                .Select(a => a.Id)
+                .ToListAsync();
+
+            if (!aulasValidasIds.Any())
+                return (false, "Ninguna de las aulas especificadas es válida o está activa.");
+
+            // 3. Obtener combinaciones que ya están registradas en la base de datos
+            var relacionesExistentes = await _context.AulasRecursos
+                .AsNoTracking()
+                .Where(ar => aulasValidasIds.Contains(ar.AulaId) && recursosValidosIds.Contains(ar.RecursoId))
+                .Select(ar => new { ar.AulaId, ar.RecursoId })
+                .ToListAsync();
+
+            var hashExistentes = new HashSet<(long AulaId, long RecursoId)>(
+                relacionesExistentes.Select(r => (r.AulaId, r.RecursoId))
+            );
+
+            // 4. Generar solo las nuevas asignaciones descartando duplicados
+            var nuevasAsignaciones = new List<AulaRecurso>();
+            DateTime fechaAsignacion = DateTime.UtcNow;
+
+            foreach (var aulaId in aulasValidasIds)
+            {
+                foreach (var recursoId in recursosValidosIds)
+                {
+                    if (!hashExistentes.Contains((aulaId, recursoId)))
+                    {
+                        nuevasAsignaciones.Add(new AulaRecurso
+                        {
+                            AulaId = aulaId,
+                            RecursoId = recursoId,
+                            AsignadoEn = fechaAsignacion
+                        });
+                    }
+                }
+            }
+
+            if (!nuevasAsignaciones.Any())
+                return (true, "Todos los recursos ya se encontraban asignados a las aulas indicadas.");
+
+            // 5. Insertar en lote (Bulk Insert)
+            _context.AulasRecursos.AddRange(nuevasAsignaciones);
+            await _context.SaveChangesAsync();
+
+            return (true, $"Se realizaron {nuevasAsignaciones.Count} asignaciones de recursos a aulas exitosamente.");
         }
     }
 }

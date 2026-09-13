@@ -161,6 +161,13 @@
                   "Archivo": {
                     "type": "string",
                     "format": "binary"
+                  },
+                  "AulaIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "format": "int64"
+                    }
                   }
                 }
               },
@@ -176,7 +183,41 @@
                 },
                 "Archivo": {
                   "style": "form"
+                },
+                "AulaIds": {
+                  "style": "form"
                 }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Aulas/recursos/asignar-aulas": {
+      "post": {
+        "tags": [
+          "Aulas"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsignarRecursoAulasDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsignarRecursoAulasDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsignarRecursoAulasDto"
               }
             }
           }
@@ -570,6 +611,28 @@
         "properties": {
           "nombre": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AsignarRecursoAulasDto": {
+        "type": "object",
+        "properties": {
+          "recursoId": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "nullable": true
+          },
+          "aulaIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
             "nullable": true
           }
         },

@@ -17,6 +17,7 @@ namespace InkMath.AuthService.Data
         public DbSet<Usuario> Usuarios { get; set; } = null!;
         public DbSet<AulaEstudiante> AulaEstudiantes { get; set; }
         public DbSet<Recurso> Recursos { get; set; }
+        public DbSet<AulaRecurso> AulasRecursos { get; set; }
 
         // Referencia a las tablas de transacciones
         public DbSet<SaldoMoneda> SaldoMonedas { get; set; } = null!;
@@ -40,6 +41,21 @@ namespace InkMath.AuthService.Data
             // Clave primaria compuesta para la tabla de unión
             modelBuilder.Entity<AulaEstudiante>()
                 .HasKey(ae => new { ae.AulaId, ae.EstudianteId });
+
+            // Clave primaria compuesta
+            modelBuilder.Entity<AulaRecurso>()
+                .HasKey(ar => new { ar.AulaId, ar.RecursoId });
+
+            // Configuración de Relaciones
+            modelBuilder.Entity<AulaRecurso>()
+                .HasOne(ar => ar.Aula)
+                .WithMany()
+                .HasForeignKey(ar => ar.AulaId);
+
+            modelBuilder.Entity<AulaRecurso>()
+                .HasOne(ar => ar.Recurso)
+                .WithMany()
+                .HasForeignKey(ar => ar.RecursoId);
         }
     }
 }

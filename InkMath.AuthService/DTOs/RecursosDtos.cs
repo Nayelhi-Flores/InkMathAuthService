@@ -9,6 +9,7 @@
 
         public string? UrlExterna { get; set; }
         public IFormFile? Archivo { get; set; }
+        public List<long>? AulaIds { get; set; }
     }
 
     public record RecursoResponseDto(
@@ -24,5 +25,11 @@
         public int Limite { get; set; } = 10;
         public long? UltimoId { get; set; }
         public DateTimeOffset? UltimaFecha { get; set; }
+    }
+
+    public class AsignarRecursoAulasDto
+    {
+        public List<long> RecursoId { get; set; } = new();
+        public List<long> AulaIds { get; set; } = new();
     }
 }

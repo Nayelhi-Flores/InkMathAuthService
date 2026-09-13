@@ -8,6 +8,7 @@ namespace InkMath.AuthService.Models
     {
         [Column("aula_id")]
         public long AulaId { get; set; }
+        public Aula Aula { get; set; } = null!;
 
         [Column("estudiante_id")]
         public long EstudianteId { get; set; }
