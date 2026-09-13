@@ -287,6 +287,48 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "CatalogosController",
+    "Method": "ObtenerTiposPregunta",
+    "RelativePath": "api/Catalogos/tipos-pregunta",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.TestsController",
+    "Method": "CrearTest",
+    "RelativePath": "api/Tests",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "InkMath.AuthService.DTOs.CrearTestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.TestsController",
+    "Method": "AnularTest",
+    "RelativePath": "api/Tests/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "InkMath.AuthService.Controllers.TransaccionesController",
     "Method": "CrearTransaccion",
     "RelativePath": "api/Transacciones/crear",
