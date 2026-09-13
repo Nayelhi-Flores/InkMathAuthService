@@ -7,7 +7,16 @@ namespace InkMath.AuthService.Data
     {
         public AplicationDbContext(DbContextOptions<AplicationDbContext> options) : base(options) { }
 
+        // Catálogos
+        public DbSet<Rol> Roles { get; set; }
+        public DbSet<Plan> Planes { get; set; }
+        public DbSet<EstadoSuscripcion> EstadosSuscripcion { get; set; }
+        public DbSet<TipoRecurso> TiposRecurso { get; set; }
+
+        // Entidades Principales
         public DbSet<Usuario> Usuarios { get; set; } = null!;
+        public DbSet<AulaEstudiante> AulaEstudiantes { get; set; }
+        public DbSet<Recurso> Recursos { get; set; }
 
         // Referencia a las tablas de transacciones
         public DbSet<SaldoMoneda> SaldoMonedas { get; set; } = null!;
@@ -27,6 +36,10 @@ namespace InkMath.AuthService.Data
             modelBuilder.Entity<TransaccionMoneda>()
                 .Property(t => t.Id)
                 .ValueGeneratedOnAdd();
+
+            // Clave primaria compuesta para la tabla de unión
+            modelBuilder.Entity<AulaEstudiante>()
+                .HasKey(ae => new { ae.AulaId, ae.EstudianteId });
         }
     }
 }

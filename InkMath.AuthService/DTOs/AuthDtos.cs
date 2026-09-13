@@ -26,6 +26,17 @@ namespace InkMath.AuthService.DTOs
         public string? Website { get; set; }
     }
 
+    public class RegistroExpressDto
+    {
+        [Required]
+        public string Nombre { get; set; } = string.Empty;
+
+        [Required]
+        public string Apellido { get; set; } = string.Empty;
+
+        public string? CodigoClase { get; set; }
+    }
+
     public class LoginDto
     {
         [Required, EmailAddress]

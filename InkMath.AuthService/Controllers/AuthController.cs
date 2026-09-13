@@ -11,13 +11,16 @@ namespace InkMath.AuthService.Controllers
     {
         private readonly IAuthService _authService;
         private readonly ITokenService _tokenService;
+        private readonly IAulaService _aulaService;
 
-        public AuthController(IAuthService authService, ITokenService tokenService)
+        public AuthController(IAuthService authService, ITokenService tokenService, IAulaService aulaService)
         {
             _authService = authService;
             _tokenService = tokenService;
+            _aulaService = aulaService;
         }
 
+        [EnableRateLimiting("RegisterLimiter")]
         [HttpPost("registro")]
         public async Task<IActionResult> Registrar([FromForm] RegistroDto dto)
         {
@@ -25,6 +28,39 @@ namespace InkMath.AuthService.Controllers
             if (!exito) return BadRequest(new { mensaje });
 
             return Ok(new { mensaje, usuarioId });
+        }
+
+        [EnableRateLimiting("RegisterLimiter")]
+        [HttpPost("registro-express")]
+        public async Task<IActionResult> RegistrarExpress([FromForm] RegistroExpressDto dto)
+        {
+            // Generar correo único basado en el nombre y un aleatorio corto
+            string idUnico = Guid.NewGuid().ToString().Substring(0, 4);
+            string emailTemp = $"{dto.Nombre.ToLower().Replace(" ", "")}.{idUnico}@inkmath.test";
+
+            var registroDto = new RegistroDto
+            {
+                Nombre = dto.Nombre,
+                Apellido = dto.Apellido,
+                Email = emailTemp,
+                Password = "AlumnoPrueba2026!",   // Contraseña genérica válida
+                RoleId = 3,                       // Rol Estudiante
+                AceptoTerminos = true,            // Aceptado automático para la prueba
+                Website = ""
+            };
+
+            var (exito, mensaje, usuarioId) = await _authService.RegistrarAsync(registroDto);
+
+            if (!exito)
+                return BadRequest(new { mensaje });
+
+            // Si tiene un código de clase, se vincula a la sección del docente
+            if (!string.IsNullOrWhiteSpace(dto.CodigoClase))
+            {
+                var (vinculoExito, vinculoMensaje) = await _aulaService.VincularAlumnoAClaseAsync(usuarioId.Value, dto.CodigoClase);
+            }
+
+            return Ok(new { mensaje = "Registro express exitoso", usuarioId, email = emailTemp });
         }
 
         [EnableRateLimiting("LoginLimiter")]
