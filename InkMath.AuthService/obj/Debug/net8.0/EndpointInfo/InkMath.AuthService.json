@@ -501,6 +501,92 @@
         }
       }
     },
+    "/api/Evaluaciones/resultados": {
+      "post": {
+        "tags": [
+          "Evaluaciones"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrarIntentoTestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrarIntentoTestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistrarIntentoTestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Evaluaciones/test/{testId}": {
+      "get": {
+        "tags": [
+          "Evaluaciones"
+        ],
+        "parameters": [
+          {
+            "name": "testId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "limitePreguntas",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 15
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Niveles/estudiante/{estudianteId}": {
+      "get": {
+        "tags": [
+          "Niveles"
+        ],
+        "parameters": [
+          {
+            "name": "estudianteId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Tests": {
       "post": {
         "tags": [
@@ -548,6 +634,37 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Tests/asignar-test": {
+      "post": {
+        "tags": [
+          "Tests"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsignarTestAulaDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsignarTestAulaDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsignarTestAulaDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK"
@@ -704,6 +821,24 @@
         },
         "additionalProperties": false
       },
+      "AsignarTestAulaDto": {
+        "type": "object",
+        "properties": {
+          "testId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "aulaIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CrearAulaDto": {
         "type": "object",
         "properties": {
@@ -750,6 +885,24 @@
             "type": "string",
             "nullable": true
           },
+          "fechaDisponibleDesde": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "fechaDisponibleHasta": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "aulaIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "nullable": true
+          },
           "preguntas": {
             "type": "array",
             "items": {
@@ -789,6 +942,54 @@
           "password": {
             "minLength": 1,
             "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RegistrarIntentoTestDto": {
+        "type": "object",
+        "properties": {
+          "testId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "estudianteId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "fechaInicio": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaFin": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "respuestas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RegistrarRespuestaDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RegistrarRespuestaDto": {
+        "type": "object",
+        "properties": {
+          "preguntaId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "opcionId": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
+          },
+          "respuestaTexto": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

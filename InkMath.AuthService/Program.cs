@@ -31,6 +31,8 @@ builder.Services.AddScoped<ISeedRepository, SeedRepository>();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IAulaService, AulaService>();
 builder.Services.AddScoped<ITestService, TestService>();
+builder.Services.AddScoped<IEvaluacionService, EvaluacionService>();
+builder.Services.AddScoped<INivelService, NivelService>();
 
 // 3. Autenticación JWT (Soporta Header Authorization y Cookies HttpOnly)
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "ClaveUltraSecretaDePrueba1234567890!";

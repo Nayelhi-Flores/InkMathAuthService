@@ -55,5 +55,26 @@ namespace InkMath.AuthService.Controllers
 
             return Ok(new { mensaje = $"Test {id} anulado correctamente y evento auditado." });
         }
+
+        [HttpPost("asignar-test")]
+        [Authorize(Roles = "1,2")]
+        public async Task<IActionResult> AsignarTestAAulas([FromBody] AsignarTestAulaDto dto)
+        {
+            if (dto == null || dto.TestId <= 0 || dto.AulaIds.Count == 0)
+            {
+                return BadRequest(new { mensaje = "Debe proporcionar un test válido y al menos un aula." });
+            }
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            long.TryParse(userIdClaim, out long usuarioId);
+
+            var exito = await _testService.AsignarTestAAulasAsync(dto, usuarioId);
+            if (!exito)
+            {
+                return NotFound(new { mensaje = "El test especificado no existe o no está activo." });
+            }
+
+            return Ok(new { mensaje = $"Test {dto.TestId} asignado correctamente a las aulas especificadas." });
+        }
     }
 }

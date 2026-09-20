@@ -29,10 +29,19 @@ namespace InkMath.AuthService.Data
         // Relaciones M:N
         public DbSet<AulaEstudiante> AulaEstudiantes { get; set; }
         public DbSet<AulaRecurso> AulasRecursos { get; set; }
+        public DbSet<AulaTest> AulaTests { get; set; }
 
         // Detalle Compuesto        
         public DbSet<PreguntaTest> PreguntasTest { get; set; }
         public DbSet<OpcionPregunta> OpcionesPregunta { get; set; }
+
+        public DbSet<IntentoTest> IntentosTest { get; set; }
+        public DbSet<RespuestaEstudiante> RespuestasEstudiante { get; set; }
+
+        // Niveles
+        public DbSet<Nivel> Niveles { get; set; }
+        public DbSet<EstadoProgreso> EstadosProgreso { get; set; }
+        public DbSet<ProgresoNivel> ProgresosNivel { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -71,6 +80,20 @@ namespace InkMath.AuthService.Data
                 .HasOne(ar => ar.Recurso)
                 .WithMany()
                 .HasForeignKey(ar => ar.RecursoId);
+
+            // Definición de la Clave Primaria Compuesta para la tabla de unión AulaTest
+            modelBuilder.Entity<AulaTest>()
+                .HasKey(at => new { at.AulaId, at.TestId });
+
+            // Mapeo explicito de la relación IntentoTest -> RespuestasEstudiante
+            modelBuilder.Entity<RespuestaEstudiante>()
+                .HasOne<IntentoTest>()
+                .WithMany(i => i.Respuestas)
+                .HasForeignKey(r => r.IntentoId);
+
+            // Clave primaria compuesta para progreso_nivel
+            modelBuilder.Entity<ProgresoNivel>()
+                .HasKey(pn => new { pn.EstudianteId, pn.NivelId });
         }
     }
 }

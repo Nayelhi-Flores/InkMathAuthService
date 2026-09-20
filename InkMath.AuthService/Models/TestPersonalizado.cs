@@ -19,6 +19,12 @@ namespace InkMath.AuthService.Models
         [Column("esta_activo")]
         public bool EstaActivo { get; set; } = true;
 
+        [Column("fecha_disponible_desde")]
+        public DateTime? FechaDisponibleDesde { get; set; }
+
+        [Column("fecha_disponible_hasta")]
+        public DateTime? FechaDisponibleHasta { get; set; }
+
         [Column("creado_en")]
         public DateTimeOffset CreadoEn { get; set; } = DateTimeOffset.UtcNow;
 

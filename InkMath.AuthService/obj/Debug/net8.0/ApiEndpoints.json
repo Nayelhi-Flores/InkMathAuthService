@@ -297,6 +297,59 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "InkMath.AuthService.Controllers.EvaluacionesController",
+    "Method": "RegistrarResultado",
+    "RelativePath": "api/Evaluaciones/resultados",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "InkMath.AuthService.DTOs.RegistrarIntentoTestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.EvaluacionesController",
+    "Method": "ObtenerPreguntasTest",
+    "RelativePath": "api/Evaluaciones/test/{testId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "testId",
+        "Type": "System.Int64",
+        "IsRequired": true
+      },
+      {
+        "Name": "limitePreguntas",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NivelesController",
+    "Method": "ObtenerMapaNiveles",
+    "RelativePath": "api/Niveles/estudiante/{estudianteId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "estudianteId",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "InkMath.AuthService.Controllers.TestsController",
     "Method": "CrearTest",
     "RelativePath": "api/Tests",
@@ -323,6 +376,22 @@
       {
         "Name": "id",
         "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.TestsController",
+    "Method": "AsignarTestAAulas",
+    "RelativePath": "api/Tests/asignar-test",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "InkMath.AuthService.DTOs.AsignarTestAulaDto",
         "IsRequired": true
       }
     ],

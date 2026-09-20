@@ -9,6 +9,7 @@ namespace InkMath.AuthService.Services
     {
         Task<TestDetalleResponseDto> CrearTestTransaccionalAsync(CrearTestDto dto);
         Task<bool> AnularTestAsync(long testId, long usuarioId);
+        Task<bool> AsignarTestAAulasAsync(AsignarTestAulaDto dto, long usuarioId);
     }
 
     public class TestService : ITestService
@@ -34,11 +35,28 @@ namespace InkMath.AuthService.Services
                 {
                     MaestroId = dto.MaestroId,
                     Nombre = dto.Nombre,
+                    FechaDisponibleDesde = dto.FechaDisponibleDesde,
+                    FechaDisponibleHasta = dto.FechaDisponibleHasta,
                     CreadoEn = DateTimeOffset.UtcNow
                 };
 
                 _context.TestsPersonalizados.Add(nuevoTest);
                 await _context.SaveChangesAsync(); // Genera el Id del Maestro
+
+                // Asignación Masiva a Aulas (Si se enviaron en la petición)
+                if (dto.AulaIds != null && dto.AulaIds.Count > 0)
+                {
+                    foreach (var aulaId in dto.AulaIds)
+                    {
+                        _context.AulaTests.Add(new AulaTest
+                        {
+                            AulaId = aulaId,
+                            TestId = nuevoTest.Id,
+                            FechaAsignacion = DateTimeOffset.UtcNow
+                        });
+                    }
+                    await _context.SaveChangesAsync();
+                }
 
                 // 2. Insertar Líneas del Detalle (preguntas_test y opciones_pregunta)
                 foreach (var preguntaDto in dto.Preguntas)
@@ -78,7 +96,7 @@ namespace InkMath.AuthService.Services
                 await _auditoriaService.RegistrarEventoAsync(
                     dto.MaestroId,
                     "CREAR_TEST",
-                    $"Se creó el test '{nuevoTest.Nombre}' (ID: {nuevoTest.Id}) con {dto.Preguntas.Count} preguntas."
+                    $"Se creó el test '{nuevoTest.Nombre}' (ID: {nuevoTest.Id}) asignado a {dto.AulaIds?.Count ?? 0} aulas."
                 );
 
                 return new TestDetalleResponseDto
@@ -86,6 +104,9 @@ namespace InkMath.AuthService.Services
                     TestId = nuevoTest.Id,
                     Nombre = nuevoTest.Nombre,
                     MaestroId = nuevoTest.MaestroId,
+                    FechaDisponibleDesde = nuevoTest.FechaDisponibleDesde,
+                    FechaDisponibleHasta = nuevoTest.FechaDisponibleHasta,
+                    AulasAsignadas = dto.AulaIds?.Count ?? 0,
                     CreadoEn = nuevoTest.CreadoEn,
                     TotalPreguntas = dto.Preguntas.Count
                 };
@@ -96,6 +117,44 @@ namespace InkMath.AuthService.Services
                 await transaction.RollbackAsync();
                 throw;
             }
+        }
+
+        public async Task<bool> AsignarTestAAulasAsync(AsignarTestAulaDto dto, long usuarioId)
+        {
+            var testExiste = await _context.TestsPersonalizados.AnyAsync(t => t.Id == dto.TestId && t.EstaActivo);
+            if (!testExiste || dto.AulaIds == null || dto.AulaIds.Count == 0) return false;
+
+            // Obtener asignaciones existentes para evitar duplicar registros en la clave compuesta
+            var asignacionesExistentes = await _context.AulaTests
+                .Where(at => at.TestId == dto.TestId && dto.AulaIds.Contains(at.AulaId))
+                .Select(at => at.AulaId)
+                .ToListAsync();
+
+            var nuevasAulas = dto.AulaIds.Except(asignacionesExistentes).ToList();
+
+            if (nuevasAulas.Count > 0)
+            {
+                foreach (var aulaId in nuevasAulas)
+                {
+                    _context.AulaTests.Add(new AulaTest
+                    {
+                        AulaId = aulaId,
+                        TestId = dto.TestId,
+                        FechaAsignacion = DateTimeOffset.UtcNow
+                    });
+                }
+
+                await _context.SaveChangesAsync();
+
+                // Registrar auditoría en MongoDB
+                await _auditoriaService.RegistrarEventoAsync(
+                    usuarioId,
+                    "ASIGNAR_TEST_AULAS",
+                    $"Se asignó el test ID: {dto.TestId} a {nuevasAulas.Count} nuevas aulas."
+                );
+            }
+
+            return true;
         }
 
         public async Task<bool> AnularTestAsync(long testId, long usuarioId)
