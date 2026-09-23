@@ -45,4 +45,14 @@ namespace InkMath.AuthService.DTOs
         [Required]
         public string Password { get; set; } = string.Empty;
     }
+
+    public class LoginResponseDto
+    {
+        public string Mensaje { get; set; } = string.Empty;
+        public long UsuarioId { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public string Token { get; set; } = string.Empty;
+        public int SaldoMonedas { get; set; }
+        public bool EsPrimerLogin { get; set; }
+    }
 }

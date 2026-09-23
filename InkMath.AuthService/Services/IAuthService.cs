@@ -9,6 +9,7 @@ namespace InkMath.AuthService.Services
     {
         Task<(bool Exito, string Mensaje, Usuario? Usuario)> LoginAsync(LoginDto dto);
         Task<(bool Exito, string Mensaje, long? UsuarioId)> RegistrarAsync(RegistroDto dto);
+        Task<(long saldoActual, bool esPrimerLogin)> AcreditarBonoBienvenidaAsync(long estudianteId);
     }
 
     public class AuthService : IAuthService
@@ -65,6 +66,32 @@ namespace InkMath.AuthService.Services
             _ = _auditoriaService.RegistrarEventoAsync(usuario.Id, "CREACION_USUARIO", $"Usuario registrado: {usuario.Email}");
 
             return (true, "Registro completado con éxito.", usuario.Id);
+        }
+
+        public async Task<(long saldoActual, bool esPrimerLogin)> AcreditarBonoBienvenidaAsync(long estudianteId)
+        {
+            var saldoObj = await _context.SaldoMonedas
+                .FirstOrDefaultAsync(s => s.EstudianteId == estudianteId);
+
+            const long MONEDAS_BIENVENIDA = 300;
+
+            // Si el estudiante no tiene registro en la tabla de monedas, se crea su saldo inicial
+            if (saldoObj == null)
+            {
+                saldoObj = new SaldoMoneda
+                {
+                    EstudianteId = estudianteId,
+                    Saldo = MONEDAS_BIENVENIDA,
+                    ActualizadoEn = DateTimeOffset.UtcNow
+                };
+
+                _context.SaldoMonedas.Add(saldoObj);
+                await _context.SaveChangesAsync();
+
+                return (saldoObj.Saldo, true);
+            }
+
+            return (saldoObj.Saldo, false);
         }
     }
 }
