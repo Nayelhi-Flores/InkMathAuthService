@@ -1,0 +1,331 @@
+﻿@import url('styles.css');
+
+.register-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 30px 20px;
+}
+
+.register-card {
+    background-color: var(--color-surface-white);
+    width: 100%;
+    max-width: 520px;
+    padding: 36px 32px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
+.register-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.brand-title {
+    color: var(--color-brand-dark);
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.brand-subtitle {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    margin-top: 4px;
+}
+
+/* Barra de Progreso */
+.progress-bar-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+}
+
+.progress-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.75rem;
+    color: var(--color-text-light);
+    font-weight: 500;
+}
+
+    .progress-step span {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background-color: var(--color-border-light);
+        color: var(--color-text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        margin-bottom: 4px;
+        transition: all 0.3s ease;
+    }
+
+    .progress-step.active {
+        color: var(--color-brand-primary);
+    }
+
+        .progress-step.active span {
+            background-color: var(--color-brand-primary);
+            color: var(--color-surface-white);
+        }
+
+.progress-line {
+    flex: 1;
+    height: 2px;
+    background-color: var(--color-border-light);
+    margin: 0 8px;
+    margin-bottom: 16px;
+    transition: background-color 0.3s ease;
+}
+
+    .progress-line.active {
+        background-color: var(--color-brand-primary);
+    }
+
+/* Pasos del Formulario */
+.step-content {
+    display: none;
+    flex-direction: column;
+    gap: 16px;
+}
+
+    .step-content.active {
+        display: flex;
+    }
+
+/* Tarjetas de Selección de Rol */
+.roles-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.role-card {
+    border: 2px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    padding: 20px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+    .role-card:hover {
+        border-color: var(--color-brand-accent);
+        background-color: var(--color-brand-light-bg);
+    }
+
+    .role-card.selected {
+        border-color: var(--color-brand-primary);
+        background-color: var(--color-brand-light-bg);
+    }
+
+.role-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    background-color: var(--color-surface-card);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
+.role-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.role-card h3 {
+    font-size: 1rem;
+    color: var(--color-text-main);
+    margin-bottom: 6px;
+}
+
+.role-card p {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    line-height: 1.3;
+}
+
+/* Estilos de Campos de Texto */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-label {
+    color: var(--color-text-main);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    color: var(--color-text-main);
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+    .form-control:focus {
+        border-color: var(--color-brand-primary);
+    }
+
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+    .password-wrapper .form-control {
+        padding-right: 48px;
+    }
+
+.btn-toggle-pass {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+}
+
+.icon-svg {
+    width: 20px;
+    height: 20px;
+    opacity: 0.6;
+}
+
+/* Reglas de la Contraseña */
+.password-rules {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.rule-item {
+    font-size: 0.75rem;
+    color: var(--color-text-light);
+    transition: color 0.2s ease;
+}
+
+    .rule-item.valid {
+        color: var(--color-success);
+        font-weight: 500;
+    }
+
+/* Términos y Condiciones */
+.terms-container {
+    background-color: var(--color-surface-card);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    max-height: 140px;
+    overflow-y: auto;
+}
+
+    .terms-container h3 {
+        font-size: 0.9rem;
+        color: var(--color-brand-dark);
+        margin-bottom: 8px;
+    }
+
+    .terms-container p {
+        font-size: 0.8rem;
+        color: var(--color-text-muted);
+        line-height: 1.4;
+    }
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+    .checkbox-group label {
+        font-size: 0.85rem;
+        color: var(--color-text-main);
+        cursor: pointer;
+    }
+
+/* Botones de Acción */
+.step-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.btn-primary, .btn-secondary {
+    flex: 1;
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.btn-primary {
+    background-color: var(--color-brand-primary);
+    color: var(--color-surface-white);
+}
+
+    .btn-primary:hover {
+        background-color: var(--color-brand-primary-hover);
+    }
+
+.btn-secondary {
+    background-color: var(--color-surface-card);
+    color: var(--color-text-main);
+    border: 1px solid var(--color-border-light);
+}
+
+    .btn-secondary:hover {
+        background-color: var(--color-border-light);
+    }
+
+.error-text {
+    color: var(--color-danger);
+    font-size: 0.75rem;
+    min-height: 16px;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.register-footer {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+}
+
+    .register-footer a {
+        color: var(--color-brand-primary);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+        .register-footer a:hover {
+            text-decoration: underline;
+        }

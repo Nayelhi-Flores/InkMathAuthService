@@ -207,12 +207,14 @@ namespace InkMath.AuthService.Services
         public async Task<RespuestaPaginadaDto<AulaResponseDto>> ObtenerAulasPaginadasPorMaestroAsync(long maestroId,ConsultaAulasPaginadaDto dto)
         {
             // Limitar el tamaño máximo de página para evitar sobrecargar la memoria
-            int limite = Math.Min(dto.Limite, 50);
+            int limite = Math.Min(dto.Limite, 5);
 
             // 1. Filtrar únicamente aulas del maestro que estén ACTIVAS
             var query = _context.Aulas
                 .AsNoTracking()
                 .Where(a => a.MaestroId == maestroId && a.EstaActivo);
+
+            int totalRegistros = await query.CountAsync();
 
             // 2. Aplicar el filtro del Cursor si el cliente envió los parámetros de la página anterior
             if (dto.UltimaFecha.HasValue && dto.UltimoId.HasValue)
@@ -232,7 +234,11 @@ namespace InkMath.AuthService.Services
                     Id = a.Id,
                     Nombre = a.Nombre,
                     CodigoAcceso = a.CodigoAcceso,
-                    CreadoEn = a.CreadoEn
+                    CreadoEn = a.CreadoEn,
+
+                    TotalEstudiantes = _context.AulaEstudiantes.Count(ae => ae.AulaId == a.Id),
+                    TotalRecursos = _context.AulasRecursos.Count(ar => ar.AulaId == a.Id),
+                    TotalTests = _context.AulaTests.Count(at => at.AulaId == a.Id)
                 })
                 .ToListAsync();
 
@@ -247,7 +253,9 @@ namespace InkMath.AuthService.Services
                 Datos = datosPaginados,
                 SiguienteUltimoId = ultimoRegistro?.Id,
                 SiguienteUltimaFecha = ultimoRegistro?.CreadoEn,
-                TieneMasPaginas = tieneMasPaginas
+                TieneMasPaginas = tieneMasPaginas,
+                TotalRegistros = totalRegistros,
+                TotalPaginas = (int)Math.Ceiling((double)totalRegistros / limite)
             };
         }
 

@@ -2,166 +2,184 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>InkMath - Dashboard de Monedas</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', sans-serif;
-        }
-
-        body {
-            background: #edf2f7;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .card {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 500px;
-            text-align: center;
-        }
-
-        h1 {
-            color: #2b6cb0;
-            margin-bottom: 12px;
-            font-size: 24px;
-        }
-
-        p {
-            color: #4a5568;
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            text-align: left;
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: #2d3748;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #cbd5e0;
-            border-radius: 6px;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-            color: white;
-        }
-
-        .btn-primary {
-            background: #3182ce;
-        }
-
-        .btn-success {
-            background: #38a169;
-        }
-
-        .btn-logout {
-            background: #e53e3e;
-            margin-top: 20px;
-        }
-
-        .alert {
-            display: none;
-            padding: 10px;
-            border-radius: 6px;
-            margin-top: 15px;
-            font-size: 14px;
-        }
-
-        .alert-info {
-            background: #ebf8ff;
-            color: #2c5282;
-        }
-    </style>
+    <title>InkMath - Gestor Docente</title>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <div class="card">
-        <h1>Dashboard de Transacciones</h1>
-        <p id="welcomeMsg">Cargando datos del usuario...</p>
+    <div class="dashboard-container">
 
-        <div id="alertBox" class="alert alert-info"></div>
+        <!-- BARRA LATERAL (NAVEGACIÓN) -->
+        <aside class="sidebar">
+            <div>
+                <div class="brand-logo">
+                    <span>🦑</span> INKMATH
+                </div>
+                <ul class="nav-menu">
+                    <li class="nav-item active" onclick="switchTab('aulas')">🏫 Aulas</li>
+                    <li class="nav-item" onclick="switchTab('evaluaciones')">🚀 Evaluaciones</li>
+                    <li class="nav-item" onclick="switchTab('recursos')">📁 Recursos</li>
+                    <li class="nav-item" onclick="switchTab('configuracion')">⚙️ Configuración</li>
+                </ul>
+            </div>
 
-        <!-- Formulario de Transacción Individual -->
-        <div class="form-group">
-            <label>Monto de Monedas</label>
-            <input type="number" id="monto" value="50">
-        </div>
-        <button class="btn btn-primary" onclick="registrarTransaccion()">Registrar Transacción Individual</button>
+            <button class="btn-logout" onclick="window.location.href='index.html'">
+                🔴 Cerrar Sesión
+            </button>
+        </aside>
 
-        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #e2e8f0;">
+        <!-- CONTENIDO PRINCIPAL -->
+        <main class="main-content">
 
-        <!-- Botón de Prueba de Carga Masiva -->
-        <button class="btn btn-success" onclick="ejecutarSeedData()">Ejecutar Stress Test (50,000 Registros)</button>
+            <!-- HEADER CABECERA -->
+            <header class="top-header">
+                <div id="breadcrumbText">Aulas > Gestor de Aulas</div>
+                <div class="user-profile">
+                    <div style="text-align: right;">
+                        <div style="font-weight: 700; font-size: 0.9rem;">Katherine Flores</div>
+                        <div style="font-size: 0.75rem; color: #94A3B8;">Docente</div>
+                    </div>
+                    <div class="avatar">KF</div>
+                </div>
+            </header>
 
-        <button class="btn btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+            <!-- CUERPO DINÁMICO DE SECCIONES -->
+            <div class="content-body">
+
+                <!-- SECCIÓN 1: GESTOR DE AULAS -->
+                <section id="view-aulas" class="view-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <div>
+                            <h1 style="font-size: 1.6rem; font-weight: 800;">GESTOR DE AULAS</h1>
+                            <p style="color: var(--color-text-muted); font-size: 0.9rem;">Cree y configure espacios seguros de diversión y aprendizaje.</p>
+                        </div>
+                        <button class="btn-primary-action" style="width: auto; padding: 10px 20px;">+ Nuevo Aula</button>
+                    </div>
+
+                    <div class="table-card">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>CÓDIGO</th>
+                                    <th>NOMBRE</th>
+                                    <th>ESTUDIANTES</th>
+                                    <th>RECURSOS</th>
+                                    <th>EVALUACIONES</th>
+                                    <th>ACCIONES</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><b>JPMPWJ</b></td>
+                                    <td>Matemáticas 5to Primaria</td>
+                                    <td>24</td>
+                                    <td>5</td>
+                                    <td>1</td>
+                                    <td>👁️ ✏️</td>
+                                </tr>
+                                <tr>
+                                    <td><b>NJQ6UT</b></td>
+                                    <td>Matemática 4to A</td>
+                                    <td>22</td>
+                                    <td>8</td>
+                                    <td>2</td>
+                                    <td>👁️ ✏️</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- SECCIÓN 2: GESTOR DE EVALUACIONES -->
+                <section id="view-evaluaciones" class="view-section" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <div>
+                            <h1 style="font-size: 1.6rem; font-weight: 800;">GESTOR DE TESTS</h1>
+                            <p style="color: var(--color-text-muted); font-size: 0.9rem;">Cree y configure evaluaciones dinámicas para sus alumnos.</p>
+                        </div>
+                        <button class="btn-primary-action" style="width: auto; padding: 10px 20px;">+ Nuevo Test</button>
+                    </div>
+
+                    <div class="table-card">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>NOMBRE</th>
+                                    <th>AULAS ASIGNADAS</th>
+                                    <th>ORIGEN PREGUNTAS</th>
+                                    <th>PREGUNTAS</th>
+                                    <th>ESTADO</th>
+                                    <th>ACCIONES</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Evaluación de Geometría Unidades...</td>
+                                    <td>3ro B</td>
+                                    <td>Propio</td>
+                                    <td>12</td>
+                                    <td><span class="badge badge-success">Publicado</span></td>
+                                    <td>👁️ ✏️</td>
+                                </tr>
+                                <tr>
+                                    <td>Fracciones equivalentes Repaso</td>
+                                    <td>3ro B</td>
+                                    <td>Nivel del juego</td>
+                                    <td>8</td>
+                                    <td><span class="badge badge-success">Publicado</span></td>
+                                    <td>👁️ ✏️</td>
+                                </tr>
+                                <tr>
+                                    <td>Diagnóstico de Álgebra Inicial</td>
+                                    <td>-</td>
+                                    <td>Nivel del juego</td>
+                                    <td>15</td>
+                                    <td><span class="badge badge-warning">Borrador</span></td>
+                                    <td>👁️ ✏️</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- SECCIÓN 3: RECURSOS -->
+                <section id="view-recursos" class="view-section" style="display: none;">
+                    <h1 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 10px;">RECURSOS PEDAGÓGICOS</h1>
+                    <p style="color: var(--color-text-muted); margin-bottom: 24px;">Material Didáctico y Guías del CNB Guatemala.</p>
+                    <div class="table-card">
+                        <p style="color: var(--color-text-muted);">Repositorio centralizado de guías y materiales del maestro.</p>
+                    </div>
+                </section>
+
+                <!-- SECCIÓN 4: CONFIGURACIÓN -->
+                <section id="view-configuracion" class="view-section" style="display: none;">
+                    <h1 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 10px;">CONFIGURACIÓN DE LA CUENTA</h1>
+                    <p style="color: var(--color-text-muted); margin-bottom: 24px;">Ajustes de perfil e institución educativa.</p>
+                    <div class="table-card">
+                        <p style="color: var(--color-text-muted);">Gestión de suscripciones y datos personales.</p>
+                    </div>
+                </section>
+
+            </div>
+        </main>
     </div>
 
     <script>
-        const nombre = sessionStorage.getItem('usuarioNombre');
-        const id = sessionStorage.getItem('usuarioId');
+        function switchTab(tabName) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
 
-        if (!nombre || !id) {
-            window.location.href = 'index.html';
-        } else {
-            document.getElementById('welcomeMsg').innerText = `Estudiante: ${nombre} (ID: ${id})`;
-        }
+            // Remover estado activo de navegación
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
-        async function registrarTransaccion() {
-            const alertBox = document.getElementById('alertBox');
-            const monto = document.getElementById('monto').value;
+            // Mostrar la sección seleccionada
+            document.getElementById('view-' + tabName).style.display = 'block';
 
-            const res = await fetch('/api/transacciones/crear', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tipoTransaccionId: 1, monto: parseInt(monto) })
-            });
+            // Actualizar la ruta del header
+            const formattedName = tabName.charAt(0).toUpperCase() + tabName.slice(1);
+            document.getElementById('breadcrumbText').innerText = formattedName + ' > Gestor de ' + formattedName;
 
-            const data = await res.json();
-            alertBox.innerText = data.mensaje || 'Transacción enviada.';
-            alertBox.style.display = 'block';
-        }
-
-        async function ejecutarSeedData() {
-            const alertBox = document.getElementById('alertBox');
-            alertBox.innerText = 'Inyectando 50,000 registros mediante SqlBulkCopy...';
-            alertBox.style.display = 'block';
-
-            const res = await fetch(`/api/transacciones/seed-data?cantidad=50000&estudianteId=${id}`, {
-                method: 'POST'
-            });
-
-            const data = await res.json();
-            alertBox.innerText = `${data.mensaje} Tiempo: ${data.tiempoEjecucion}`;
-        }
-
-        function cerrarSesion() {
-            sessionStorage.clear();
-            window.location.href = 'index.html';
+            // Marcar elemento activo en la lista de menú
+            event.currentTarget.classList.add('active');
         }
     </script>
 </body>

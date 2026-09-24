@@ -15,5 +15,7 @@
         public long? SiguienteUltimoId { get; set; }
         public DateTimeOffset? SiguienteUltimaFecha { get; set; }
         public bool TieneMasPaginas { get; set; }
+        public int TotalRegistros { get; set; }
+        public int TotalPaginas { get; set; }
     }
 }

@@ -10,5 +10,9 @@
         public string Nombre { get; set; } = string.Empty;
         public string CodigoAcceso { get; set; } = string.Empty;
         public DateTimeOffset CreadoEn { get; set; }
+
+        public int TotalEstudiantes { get; set; }
+        public int TotalRecursos { get; set; }
+        public int TotalTests { get; set; }
     }
 }

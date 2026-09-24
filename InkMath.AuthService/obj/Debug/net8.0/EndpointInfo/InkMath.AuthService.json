@@ -672,6 +672,18 @@
         }
       }
     },
+    "/api/Tests/mis-tests": {
+      "get": {
+        "tags": [
+          "Tests"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Transacciones/crear": {
       "post": {
         "tags": [

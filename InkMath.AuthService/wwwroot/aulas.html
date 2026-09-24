@@ -1,0 +1,239 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Aulas - InkMath</title>
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/aulas.css">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- BARRA LATERAL (SIDEBAR) -->
+        <aside class="sidebar">
+            <div class="brand">
+                <img src="icons/V2.svg" alt="InkMath Logo" class="brand-logo">
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="aulas.html" class="nav-item active">
+                    <img src="icons/bx-school.svg" alt="" class="nav-icon">
+                    <span>Aulas</span>
+                </a>
+                <a href="evaluaciones.html" class="nav-item">
+                    <img src="icons/bx-rocket.svg" alt="" class="nav-icon">
+                    <span>Evaluaciones</span>
+                </a>
+                <a href="recursos.html" class="nav-item">
+                    <img src="icons/bx-folder.svg" alt="" class="nav-icon">
+                    <span>Recursos</span>
+                </a>
+                <a href="configuracion.html" class="nav-item">
+                    <img src="icons/bx-cog.svg" alt="" class="nav-icon">
+                    <span>Configuración</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button id="btnLogout" class="btn-logout">
+                    <img src="icons/bx-power.svg" alt="" class="logout-icon">
+                    <span>Cerrar Sesión</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <div class="main-wrapper">
+            <!-- BARRA SUPERIOR (HEADER) -->
+            <header class="topbar">
+                <div class="breadcrumb">
+                    <span class="bc-muted">Aulas</span>
+                    <span class="bc-separator">&gt;</span>
+                    <span class="bc-active">Gestor de Aulas</span>
+                </div>
+
+                <div class="user-profile">
+                    <div class="user-info">
+                        <span class="user-name" id="profileName">Katherine Flores</span>
+                        <span class="user-role">Docente</span>
+                    </div>
+                    <div class="user-avatar" id="profileInitials">KF</div>
+                    <button class="btn-notification" aria-label="Notificaciones">
+                        <img src="icons/bx-bell.svg" alt="Notificaciones">
+                    </button>
+                </div>
+            </header>
+
+            <!-- CONTENIDO DE LA PÁGINA -->
+            <main class="content-body">
+                <!-- CABECERA DE PÁGINA Y BÚSQUEDA -->
+                <div class="page-header">
+                    <div class="title-section">
+                        <h1>GESTOR DE AULAS</h1>
+                        <p class="subtitle">Cree y configure espacios seguros de diversión y aprendizaje</p>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Nombre del test...">
+                        <button id="btnSearch" class="search-btn">
+                            <img src="icons/bx-search.svg" alt="Buscar">
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CONTENEDOR DE TABLA Y ACCIONES -->
+                <div class="card-container">
+                    <!-- BARRA DE ACCIONES DE TABLA -->
+                    <div class="table-actions">
+                        <button id="btnNuevaAula" class="btn-primary">
+                            <span class="plus-icon">+</span> Nuevo
+                        </button>
+
+                        <div class="action-group-right">
+                            <button id="btnAsignarRecurso" class="btn-secondary">
+                                <img src="icons/bx-link.svg" alt="" class="btn-icon">
+                                <span>Asignar Recurso</span>
+                            </button>
+                            <button id="btnAsignarTest" class="btn-secondary">
+                                <img src="icons/bx-link.svg" alt="" class="btn-icon">
+                                <span>Asignar Test</span>
+                            </button>
+                            <button id="btnEliminar" class="btn-danger-outline">
+                                <img src="icons/bx-trash-alt.svg" alt="" class="btn-icon">
+                                <span>Eliminar</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- TABLA DE AULAS -->
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-checkbox">
+                                        <input type="checkbox" id="selectAllCheckbox">
+                                    </th>
+                                    <th>Código</th>
+                                    <th>Nombre</th>
+                                    <th class="text-center">Estudiantes</th>
+                                    <th class="text-center">Recursos</th>
+                                    <th class="text-center">Evaluaciones</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="aulasTableBody">
+                                <!-- Se renderiza dinámicamente desde JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- PIE DE PÁGINA CON PAGINACIÓN -->
+                <footer class="pagination-footer">
+                    <div class="pagination-info" id="paginationInfo">
+                        Mostrando 0 de 0 aulas existentes
+                    </div>
+                    <div class="pagination-controls">
+                        <button id="btnPrevPage" class="pagination-arrow">&lt;</button>
+
+                        <button id="btnFirstPage" class="page-badge active">1</button>
+
+                        <span class="page-text">de</span>
+
+                        <button id="btnLastPage" class="page-badge-secondary">1</button>
+
+                        <button id="btnNextPage" class="pagination-arrow">&gt;</button>
+
+                        <span class="page-text ml-15">Página</span>
+                        <select id="pageSelect" class="page-select">
+                            <option value="1">1</option>
+                        </select>
+                        <span class="page-text">de <span id="totalPagesLabel">1</span></span>
+                    </div>
+                </footer>
+            </main>
+        </div>
+    </div>
+
+    <!-- MODAL CREAR / EDITAR AULA -->
+    <div id="aulaModal" class="modal-overlay">
+        <div class="modal-card">
+            <h2 id="modalTitle">Nueva Aula</h2>
+            <form id="aulaForm">
+                <input type="hidden" id="aulaIdInput">
+                <div class="form-group">
+                    <label for="nombreAulaInput">Nombre del Aula</label>
+                    <input type="text" id="nombreAulaInput" required placeholder="Ej. 2do Primaria Sección A">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="btnCloseModal">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Asignar Recurso -->
+    <div id="modalAsignarRecurso" class="modal-overlay">
+        <div class="modal-card">
+            <h2>Asignar Recurso a Aulas</h2>
+
+            <p id="lblAulasSeleccionadas" class="subtitle" style="margin-bottom: 16px;">
+                Aulas seleccionadas: <span style="color: var(--primary-blue); font-weight: 700;">0</span>
+            </p>
+
+            <!-- Buscador de Recursos -->
+            <div class="form-group">
+                <label for="txtBuscarRecursoModal">Buscar Recurso</label>
+                <input type="text" id="txtBuscarRecursoModal" placeholder="Escribe para buscar...">
+            </div>
+
+            <!-- Lista de Recursos Filtrable -->
+            <div class="form-group">
+                <label>Selecciona un Recurso</label>
+                <div id="listaRecursosModal" class="recursos-lista-container">
+                    <p class="text-center subtitle" style="padding: 16px 0;">Cargando recursos...</p>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" id="btnCancelarAsignacion">Cancelar</button>
+                <button type="button" class="btn-primary" id="btnConfirmarAsignacion" disabled>Asignar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Asignar Test -->
+    <div id="modalAsignarTest" class="modal-overlay">
+        <div class="modal-card">
+            <h2>Asignar Test a Aulas</h2>
+
+            <p id="lblAulasSeleccionadasTest" class="subtitle" style="margin-bottom: 16px;">
+                Aulas seleccionadas: <span style="color: var(--primary-blue); font-weight: 700;">0</span>
+            </p>
+
+            <!-- Buscador de Tests -->
+            <div class="form-group">
+                <label for="txtBuscarTestModal">Buscar Test</label>
+                <input type="text" id="txtBuscarTestModal" placeholder="Escribe para buscar...">
+            </div>
+
+            <!-- Lista de Tests Filtrable -->
+            <div class="form-group">
+                <label>Selecciona un Test</label>
+                <div id="listaTestsModal" class="recursos-lista-container">
+                    <p class="subtitle text-center" style="padding: 16px 0;">Cargando tests...</p>
+                </div>
+            </div>
+
+            <!-- Acciones -->
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" id="btnCancelarAsignacionTest">Cancelar</button>
+                <button type="button" class="btn-primary" id="btnConfirmarAsignacionTest" disabled>Asignar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/aulas.js"></script>
+</body>
+</html>

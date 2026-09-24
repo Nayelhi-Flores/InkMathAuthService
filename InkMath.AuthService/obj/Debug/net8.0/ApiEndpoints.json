@@ -398,6 +398,16 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "InkMath.AuthService.Controllers.TestsController",
+    "Method": "ObtenerMisTests",
+    "RelativePath": "api/Tests/mis-tests",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "InkMath.AuthService.Controllers.TransaccionesController",
     "Method": "CrearTransaccion",
     "RelativePath": "api/Transacciones/crear",

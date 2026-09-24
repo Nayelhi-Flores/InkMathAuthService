@@ -10,6 +10,7 @@ namespace InkMath.AuthService.Services
         Task<TestDetalleResponseDto> CrearTestTransaccionalAsync(CrearTestDto dto);
         Task<bool> AnularTestAsync(long testId, long usuarioId);
         Task<bool> AsignarTestAAulasAsync(AsignarTestAulaDto dto, long usuarioId);
+        Task<List<TestDetalleResponseDto>> ObtenerTestsPorMaestroAsync(long maestroId);
     }
 
     public class TestService : ITestService
@@ -174,6 +175,25 @@ namespace InkMath.AuthService.Services
             );
 
             return true;
+        }
+
+        public async Task<List<TestDetalleResponseDto>> ObtenerTestsPorMaestroAsync(long maestroId)
+        {
+            return await _context.TestsPersonalizados
+                .Where(t => t.MaestroId == maestroId && t.EstaActivo)
+                .OrderByDescending(t => t.CreadoEn)
+                .Select(t => new TestDetalleResponseDto
+                {
+                    TestId = t.Id,
+                    Nombre = t.Nombre,
+                    MaestroId = t.MaestroId,
+                    FechaDisponibleDesde = t.FechaDisponibleDesde,
+                    FechaDisponibleHasta = t.FechaDisponibleHasta,
+                    AulasAsignadas = _context.AulaTests.Count(at => at.TestId == t.Id),
+                    CreadoEn = t.CreadoEn,
+                    TotalPreguntas = t.Preguntas.Count
+                })
+                .ToListAsync();
         }
     }
 }

@@ -76,5 +76,19 @@ namespace InkMath.AuthService.Controllers
 
             return Ok(new { mensaje = $"Test {dto.TestId} asignado correctamente a las aulas especificadas." });
         }
+
+        [HttpGet("mis-tests")]
+        [Authorize(Roles = "1,2")]
+        public async Task<IActionResult> ObtenerMisTests()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!long.TryParse(userIdClaim, out long maestroId))
+            {
+                return Unauthorized(new { mensaje = "Usuario no válido." });
+            }
+
+            var tests = await _testService.ObtenerTestsPorMaestroAsync(maestroId);
+            return Ok(new { datos = tests });
+        }
     }
 }

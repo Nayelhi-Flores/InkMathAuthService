@@ -34,6 +34,17 @@ builder.Services.AddScoped<ITestService, TestService>();
 builder.Services.AddScoped<IEvaluacionService, EvaluacionService>();
 builder.Services.AddScoped<INivelService, NivelService>();
 
+// Configuracion de CORS (Permite peticiones desde la Web y Godot Engine)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 // 3. Autenticación JWT (Soporta Header Authorization y Cookies HttpOnly)
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "ClaveUltraSecretaDePrueba1234567890!";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -109,7 +120,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// 5. Middleware de Archivos Estáticos y Enrutamiento Web
+app.UseDefaultFiles(); // Redirige a index.html automáticamente en la raíz "/"
 app.UseStaticFiles();
+app.UseCors("AllowAll");
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
