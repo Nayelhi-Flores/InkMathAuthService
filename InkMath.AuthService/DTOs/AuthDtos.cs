@@ -55,4 +55,15 @@ namespace InkMath.AuthService.DTOs
         public int SaldoMonedas { get; set; }
         public bool EsPrimerLogin { get; set; }
     }
+
+    public class ActualizarPerfilDto
+    {
+        public string Nombre { get; set; } = string.Empty;
+        public string Apellido { get; set; } = string.Empty;
+    }
+
+    public class SimularSuscripcionDto
+    {
+        public long PlanId { get; set; }
+    }
 }

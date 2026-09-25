@@ -446,12 +446,54 @@
   },
   {
     "ContainingType": "InkMath.AuthService.Controllers.UsuariosController",
+    "Method": "DarseDeBaja",
+    "RelativePath": "api/Usuarios/darse-de-baja",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.UsuariosController",
     "Method": "ObtenerPerfil",
     "RelativePath": "api/Usuarios/me",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.UsuariosController",
+    "Method": "ActualizarPerfil",
+    "RelativePath": "api/Usuarios/me",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "InkMath.AuthService.DTOs.ActualizarPerfilDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.UsuariosController",
+    "Method": "SimularSuscripcion",
+    "RelativePath": "api/Usuarios/prueba-suscripcion",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "InkMath.AuthService.DTOs.SimularSuscripcionDto",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   },
   {

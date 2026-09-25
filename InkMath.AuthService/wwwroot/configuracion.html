@@ -1,0 +1,118 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración - InkMath</title>
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/aulas.css">
+    <link rel="stylesheet" href="css/configuracion.css">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- BARRA LATERAL (Inyectada desde layout.js) -->
+        <aside class="sidebar"></aside>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <div class="main-wrapper">
+            <!-- BARRA SUPERIOR (HEADER) -->
+            <header class="topbar">
+                <div class="breadcrumb">
+                    <span class="bc-muted">Inicio</span>
+                    <span class="bc-separator">&gt;</span>
+                    <span class="bc-active">Configuración</span>
+                </div>
+
+                <div class="user-profile">
+                    <div class="user-info">
+                        <span class="user-name" id="profileName">Cargando...</span>
+                        <span class="user-role">Docente</span>
+                    </div>
+                    <div class="user-avatar" id="profileInitials">--</div>
+                    <button class="btn-notification" aria-label="Notificaciones">
+                        <img src="icons/bx-bell.svg" alt="Notificaciones">
+                    </button>
+                </div>
+            </header>
+
+            <!-- CONTENIDO DE LA PÁGINA -->
+            <main class="content-body">
+                <div class="page-header">
+                    <div class="title-section">
+                        <h1>CONFIGURACIÓN DE CUENTA</h1>
+                        <p class="subtitle">Administra tu perfil, suscripción y preferencias de la plataforma</p>
+                    </div>
+                </div>
+
+                <!-- TARJETAS DE CONFIGURACIÓN -->
+                <div class="config-grid">
+
+                    <!-- 1. Perfil de Usuario -->
+                    <div class="config-card">
+                        <div>
+                            <div class="card-header-custom">
+                                <img src="icons/bx-cog.svg" alt="Perfil">
+                                <h2>Perfil de Usuario</h2>
+                            </div>
+                            <form id="formPerfil">
+                                <div class="form-group">
+                                    <label for="txtEmail">Correo Electrónico</label>
+                                    <input type="email" id="txtEmail" disabled style="background-color: #f5f5f5;">
+                                </div>
+                                <div class="form-group">
+                                    <label for="txtNombre">Nombre</label>
+                                    <input type="text" id="txtNombre" required placeholder="Tu nombre">
+                                </div>
+                                <div class="form-group">
+                                    <label for="txtApellido">Apellido</label>
+                                    <input type="text" id="txtApellido" required placeholder="Tu apellido">
+                                </div>
+                                <button type="submit" class="btn-primary" style="margin-top: 12px; width: 100%;">Guardar Cambios</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- 2. Planes y Suscripción -->
+                    <div class="config-card">
+                        <div>
+                            <div class="card-header-custom">
+                                <img src="icons/bx-rocket.svg" alt="Suscripción">
+                                <h2>Suscripción Actual</h2>
+                            </div>
+                            <div class="info-group">
+                                <label>Plan Activo</label>
+                                <div>
+                                    <span id="lblTipoSuscripcion" class="plan-badge">Gratuito</span>
+                                </div>
+                            </div>
+                            <p class="subtitle" style="margin-top: 16px;">Prueba las características avanzadas con una prueba gratuita de suscripción (Modo Demo).</p>
+                        </div>
+                        <button id="btnSimularSuscripcion" class="btn-secondary" style="margin-top: 20px; width: 100%;">
+                            Prueba Plan Premium (30 Días)
+                        </button>
+                    </div>
+
+                    <!-- 3. Zona de Peligro / Cuenta -->
+                    <div class="config-card danger-zone">
+                        <div>
+                            <div class="card-header-custom">
+                                <img src="icons/bx-trash-alt.svg" alt="Baja">
+                                <h2>Eliminar Cuenta</h2>
+                            </div>
+                            <p class="subtitle">Al darte de baja, tu usuario pasará a estado inactivo y no podrás acceder hasta que un administrador reactive tu cuenta.</p>
+                        </div>
+                        <button id="btnDarseDeBaja" class="btn-danger-outline" style="margin-top: 20px; width: 100%;">
+                            Darse de Baja
+                        </button>
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/layout.js"></script>
+    <script src="js/configuracion.js"></script>
+</body>
+</html>

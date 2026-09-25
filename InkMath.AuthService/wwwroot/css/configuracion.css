@@ -1,0 +1,76 @@
+﻿/* css/configuracion.css */
+.config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+    margin-top: 20px;
+}
+
+.config-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid #eef2f6;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.card-header-custom {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 12px;
+}
+
+    .card-header-custom img {
+        width: 28px;
+        height: 28px;
+    }
+
+    .card-header-custom h2 {
+        font-size: 1.1rem;
+        color: var(--text-dark, #2c3e50);
+        margin: 0;
+    }
+
+.plan-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    background-color: #e3f2fd;
+    color: #0288d1;
+    font-weight: 700;
+    border-radius: 20px;
+    font-size: 0.95rem;
+    margin-top: 8px;
+}
+
+.danger-zone {
+    border: 1px solid #ffcdd2;
+    background-color: #fff9f9;
+}
+
+    .danger-zone h2 {
+        color: #d32f2f;
+    }
+
+.info-group {
+    margin-bottom: 16px;
+}
+
+    .info-group label {
+        display: block;
+        font-size: 0.85rem;
+        color: #78909c;
+        margin-bottom: 4px;
+    }
+
+    .info-group p {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #37474f;
+        margin: 0;
+    }
