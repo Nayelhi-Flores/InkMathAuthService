@@ -1,11 +1,12 @@
-using System.Text;
-using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using InkMath.AuthService.Data;
 using InkMath.AuthService.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,6 +45,11 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader();
     });
 });
+
+// Configurar MIME types para archivos de Godot 4 Web
+var provider = new FileExtensionContentTypeProvider();
+provider.Mappings[".pck"] = "application/octet-stream";
+provider.Mappings[".wasm"] = "application/wasm";
 
 // 3. Autenticación JWT (Soporta Header Authorization y Cookies HttpOnly)
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "ClaveUltraSecretaDePrueba1234567890!";
@@ -121,8 +127,17 @@ if (app.Environment.IsDevelopment())
 }
 
 // 5. Middleware de Archivos Estáticos y Enrutamiento Web
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("Cross-Origin-Opener-Policy", "same-origin");
+    context.Response.Headers.Append("Cross-Origin-Embedder-Policy", "require-corp");
+    await next();
+});
 app.UseDefaultFiles(); // Redirige a index.html automáticamente en la raíz "/"
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = provider
+});
 app.UseCors("AllowAll");
 app.UseRateLimiter();
 app.UseAuthentication();

@@ -93,7 +93,7 @@ async function darseDeBaja() {
         if (response.ok) {
             alert('Tu cuenta ha sido desactivada.');
             localStorage.removeItem('token');
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
         } else {
             const err = await response.json();
             alert(err.mensaje || 'Error al procesar la baja');

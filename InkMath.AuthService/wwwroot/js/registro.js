@@ -219,7 +219,7 @@
                     if (data && data.token) {
                         localStorage.setItem('token', data.token);
                     }
-                    window.location.href = 'estudiante.html';
+                    window.location.href = 'juego.html';
                 } else {
                     window.location.href = 'index.html';
                 }

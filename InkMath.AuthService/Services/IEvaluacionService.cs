@@ -75,11 +75,13 @@ namespace InkMath.AuthService.Services
                 // Guardar respuestas
                 foreach (var resp in dto.Respuestas)
                 {
+                    long? opcionIdValida = resp.OpcionId > 0 ? resp.OpcionId : null;
+
                     _context.RespuestasEstudiante.Add(new RespuestaEstudiante
                     {
                         IntentoId = nuevoIntento.Id,
                         PreguntaId = resp.PreguntaId,
-                        OpcionId = resp.OpcionId,
+                        OpcionId = opcionIdValida,
                         RespuestaTexto = resp.RespuestaTexto
                     });
                 }

@@ -48,7 +48,7 @@ function initLayout() {
 async function cargarPerfilTopbar() {
     const token = localStorage.getItem('token');
     if (!token) {
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
         return;
     }
 
@@ -82,5 +82,5 @@ async function cargarPerfilTopbar() {
 
 function cerrarSesion() {
     localStorage.removeItem('token');
-    window.location.href = 'login.html';
+    window.location.href = 'index.html';
 }

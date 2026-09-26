@@ -59,6 +59,7 @@
                 // Guardar token/sesión si el backend retorna JWT o datos de usuario
                 if (data.token) {
                     localStorage.setItem('token', data.token);
+                    localStorage.setItem('usuario_id', data.usuarioId);
                 }
 
                 let rolId = data.rolId || data.idRol;
@@ -80,7 +81,7 @@
                 if (rolId === 2) {
                     window.location.href = 'aulas.html';
                 } else if (rolId === 3) {
-                    window.location.href = 'estudiante.html';
+                    window.location.href = 'juego.html';
                 } else if (rolId === 1) {
                     window.location.href = 'admin.html';
                 } else {
