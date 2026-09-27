@@ -87,6 +87,54 @@ namespace InkMath.AuthService.Services
                 }
                 await _context.SaveChangesAsync();
 
+                // Actualizar progreso de nivel
+                // Verificar si este Test está vinculado a un Nivel de juego
+                var nivelAsociado = await _context.Niveles
+                    .FirstOrDefaultAsync(n => n.TestId == dto.TestId);
+
+                if (nivelAsociado != null)
+                {
+                    var progreso = await _context.ProgresosNivel
+                        .FirstOrDefaultAsync(p => p.NivelId == nivelAsociado.Id && p.EstudianteId == dto.EstudianteId);
+
+                    // Determinar estado de progreso:
+                    // ID 3 = Completado (100% correctas)
+                    // ID 2 = En Progreso (ya respondió el test pero no todas son correctas)
+                    long nuevoEstadoId = (aciertos == totalPreguntas && totalPreguntas > 0) ? 3 : 2;
+
+                    if (progreso == null)
+                    {
+                        // Si no existía registro previo
+                        progreso = new ProgresoNivel
+                        {
+                            EstudianteId = dto.EstudianteId,
+                            NivelId = nivelAsociado.Id,
+                            EstadoId = nuevoEstadoId,
+                            Puntaje = puntajeFinal,
+                            Intentos = 1
+                        };
+                        _context.ProgresosNivel.Add(progreso);
+                    }
+                    else
+                    {
+                        // Si ya existía, incrementar intentos y actualizar puntaje máximo alcanzado
+                        progreso.Intentos += 1;
+
+                        if (puntajeFinal > progreso.Puntaje)
+                        {
+                            progreso.Puntaje = puntajeFinal;
+                        }
+
+                        // Si ya estaba completado (3), mantenemos 3. De lo contrario se asigna el nuevo estado
+                        if (progreso.EstadoId != 3)
+                        {
+                            progreso.EstadoId = nuevoEstadoId;
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
+                }
+
                 // 6. Calcular recompensas sólo si superó su récord anterior
                 long monedasGanadas = 0;
                 long nuevoSaldo = 0;
