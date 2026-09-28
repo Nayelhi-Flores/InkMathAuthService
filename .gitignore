@@ -1,6 +1,7 @@
 # Archivos de configuración con credenciales
 .env
 *.env
+.env.docker
 
 # Archivos pesados/locales subidos
 Uploads/

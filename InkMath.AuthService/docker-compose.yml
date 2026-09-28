@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  inkmath-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: inkmath_api_service
+    env_file:
+      - .env.docker
+    ports:
+      - "8080:8080"
+    restart: always
