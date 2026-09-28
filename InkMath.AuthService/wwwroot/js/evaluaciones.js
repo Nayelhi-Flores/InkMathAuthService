@@ -225,6 +225,127 @@
         } catch (err) { console.error(err); }
     }
 
+    // ---------- Vista Nuevo Test ----------
+    // Ajustar a los ids reales de la tabla tipos_pregunta
+    const TIPOS_PREGUNTA = { 1: { nombre: 'Opción múltiple', opciones: true }, 2: { nombre: 'Respuesta abierta', opciones: false } };
+
+    const vistaLista = $('vistaLista'), vistaNuevo = $('vistaNuevo'), testForm = $('testForm'), preguntasBox = $('preguntasContainer');
+    const bcLista = $('bcLista'), bcSep2 = $('bcSep2'), bcNuevo = $('bcNuevo');
+    const selectorAulasTest = crearSelector($('ntAulaInput'), $('ntAulaDatalist'), $('ntAulaChips'), () => { });
+    let uidPregunta = 0;
+
+    function mostrarNuevo(si) {
+        vistaLista.hidden = si; vistaNuevo.hidden = !si;
+        bcSep2.hidden = !si; bcNuevo.hidden = !si;
+        bcLista.classList.toggle('bc-muted', si); bcLista.classList.toggle('bc-active', !si);
+        if (si) {
+            testForm.reset(); preguntasBox.innerHTML = ''; agregarPregunta();
+            selectorAulasTest.setItems(aulas);
+            window.scrollTo(0, 0);
+        }
+    }
+
+    function filaOpcion(nombreRadio, checked = false) {
+        const d = document.createElement('div');
+        d.className = 'opcion-row';
+        d.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;';
+        d.innerHTML = `<input type="radio" name="${nombreRadio}" title="Respuesta correcta" ${checked ? 'checked' : ''}>
+            <input type="text" class="op-texto" placeholder="Texto de la opción" style="flex:1;">
+            <button type="button" data-act="quitar-opcion" style="border:0;background:none;cursor:pointer;color:#EF4444;font-weight:700;">×</button>`;
+        return d;
+    }
+
+    function agregarPregunta() {
+        const uid = ++uidPregunta, card = document.createElement('div');
+        card.className = 'pregunta-card';
+        card.style.cssText = 'border:1px solid #E2E8F0;border-radius:12px;padding:16px;margin-bottom:16px;';
+        card.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <strong class="q-num"></strong>
+                <button type="button" data-act="quitar-pregunta" class="btn-danger-outline">Quitar</button>
+            </div>
+            <div class="form-group"><label>Tipo</label>
+                <select class="q-tipo">${Object.entries(TIPOS_PREGUNTA).map(([id, t]) => `<option value="${id}">${t.nombre}</option>`).join('')}</select></div>
+            <div class="form-group"><label>Enunciado</label><input type="text" class="q-texto" placeholder="Escribe la pregunta"></div>
+            <div class="q-opciones"><label style="display:block;margin-bottom:8px;">Opciones (marca la correcta)</label>
+                <div class="q-lista"></div>
+                <button type="button" data-act="agregar-opcion" class="btn-secondary">+ Opción</button></div>`;
+        const lista = card.querySelector('.q-lista');
+        lista.append(filaOpcion(`c${uid}`, true), filaOpcion(`c${uid}`));
+        card.dataset.uid = uid;
+        preguntasBox.appendChild(card);
+        numerarPreguntas();
+    }
+    const numerarPreguntas = () => preguntasBox.querySelectorAll('.q-num').forEach((n, i) => n.textContent = `Pregunta ${i + 1}`);
+
+    preguntasBox.addEventListener('click', e => {
+        const b = e.target.closest('[data-act]'); if (!b) return;
+        const card = b.closest('.pregunta-card');
+        if (b.dataset.act === 'quitar-pregunta') {
+            if (preguntasBox.children.length === 1) return alert('El test debe tener al menos una pregunta.');
+            card.remove(); numerarPreguntas();
+        } else if (b.dataset.act === 'agregar-opcion') {
+            card.querySelector('.q-lista').appendChild(filaOpcion(`c${card.dataset.uid}`));
+        } else if (b.dataset.act === 'quitar-opcion') {
+            const lista = card.querySelector('.q-lista');
+            if (lista.children.length <= 2) return alert('Se requieren al menos 2 opciones.');
+            const fila = b.closest('.opcion-row'), eraCorrecta = fila.querySelector('input[type=radio]').checked;
+            fila.remove();
+            if (eraCorrecta) lista.querySelector('input[type=radio]').checked = true;
+        }
+    });
+    preguntasBox.addEventListener('change', e => {
+        if (!e.target.classList.contains('q-tipo')) return;
+        e.target.closest('.pregunta-card').querySelector('.q-opciones').hidden = !TIPOS_PREGUNTA[e.target.value].opciones;
+    });
+
+    function recolectarPreguntas() {
+        const out = [];
+        for (const [i, card] of [...preguntasBox.querySelectorAll('.pregunta-card')].entries()) {
+            const tipo = Number(card.querySelector('.q-tipo').value);
+            const pregunta = card.querySelector('.q-texto').value.trim();
+            if (!pregunta) throw new Error(`La pregunta ${i + 1} no tiene enunciado.`);
+            let opciones = [], correcta = 0;
+            if (TIPOS_PREGUNTA[tipo].opciones) {
+                const filas = [...card.querySelectorAll('.opcion-row')];
+                opciones = filas.map(f => f.querySelector('.op-texto').value.trim());
+                if (opciones.some(o => !o)) throw new Error(`La pregunta ${i + 1} tiene opciones vacías.`);
+                correcta = filas.findIndex(f => f.querySelector('input[type=radio]').checked);
+                if (correcta < 0) throw new Error(`Marca la opción correcta en la pregunta ${i + 1}.`);
+            }
+            out.push({ tipoPreguntaId: tipo, pregunta, opciones, opcionCorrectaIndex: correcta });
+        }
+        return out;
+    }
+
+    testForm.addEventListener('submit', async e => {
+        e.preventDefault();
+        const nombre = $('ntNombre').value.trim(), desde = $('ntDesde').value, hasta = $('ntHasta').value;
+        if (!nombre) return alert('El nombre del test es obligatorio.');
+        if (desde && hasta && new Date(hasta) < new Date(desde)) return alert('"Disponible hasta" no puede ser anterior a "desde".');
+        let preguntas;
+        try { preguntas = recolectarPreguntas(); } catch (err) { return alert(err.message); }
+        const body = {
+            maestroId: 0, nombre,
+            fechaDisponibleDesde: desde ? new Date(desde).toISOString() : null,
+            fechaDisponibleHasta: hasta ? new Date(hasta).toISOString() : null,
+            aulaIds: selectorAulasTest.ids(), preguntas
+        };
+        const btn = $('btnGuardarTest'); btn.disabled = true;
+        try {
+            const res = await api('/api/Tests', { method: 'POST', body: JSON.stringify(body) });
+            if (!res.ok) return alert(await mensajeDe(res, 'No se pudo crear el test.'));
+            alert('Test creado correctamente.');
+            mostrarNuevo(false); cargar(true);
+        } catch (err) { console.error(err); alert('Error de red al guardar el test.'); }
+        finally { btn.disabled = false; }
+    });
+
+    $('btnNuevoTest').addEventListener('click', () => mostrarNuevo(true));
+    $('btnAgregarPregunta').addEventListener('click', agregarPregunta);
+    $('btnCancelarNuevo').addEventListener('click', () => mostrarNuevo(false));
+    bcLista.addEventListener('click', () => { if (!vistaNuevo.hidden) mostrarNuevo(false); });
+
     cargarAulas();
     cargar(true);
 });

@@ -1,2 +1,0 @@
-C:\Users\Kathe\source\repos\InkMath.AuthService\InkMath.AuthService\wwwroot\dashboard.html
-C:\Users\Kathe\source\repos\InkMath.AuthService\InkMath.AuthService\wwwroot\docente.html

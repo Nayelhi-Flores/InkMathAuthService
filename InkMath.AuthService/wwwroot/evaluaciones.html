@@ -7,6 +7,15 @@
     <link rel="stylesheet" href="css/theme.css">
     <link rel="stylesheet" href="css/aulas.css">
     <script src="js/layout.js" defer></script>
+    <style>
+        [hidden] {
+            display: none !important
+        }
+
+        .bc-link {
+            cursor: pointer
+        }
+    </style>
 </head>
 <body>
     <div class="app-layout">
@@ -17,7 +26,9 @@
                 <div class="breadcrumb">
                     <span class="bc-muted">Evaluaciones</span>
                     <span class="bc-separator">&gt;</span>
-                    <span class="bc-active">Gestor de Tests</span>
+                    <span class="bc-active bc-link" id="bcLista">Gestor de Tests</span>
+                    <span class="bc-separator" id="bcSep2" hidden>&gt;</span>
+                    <span class="bc-active" id="bcNuevo" hidden>Nuevo Test</span>
                 </div>
                 <div class="user-profile">
                     <div class="user-info">
@@ -32,74 +43,119 @@
             </header>
 
             <main class="content-body">
-                <div class="page-header">
-                    <div class="title-section">
-                        <h1>GESTOR DE TESTS</h1>
-                        <p class="subtitle">Cree y configure evaluaciones dinámicas para sus alumnos</p>
+                <div id="vistaLista">
+                    <div class="page-header">
+                        <div class="title-section">
+                            <h1>GESTOR DE TESTS</h1>
+                            <p class="subtitle">Cree y configure evaluaciones dinámicas para sus alumnos</p>
+                        </div>
+                        <div class="search-box">
+                            <input type="text" id="searchInput" placeholder="Nombre del test..." autocomplete="off">
+                            <button id="btnSearch" class="search-btn">
+                                <img src="icons/bx-search.svg" alt="Buscar">
+                            </button>
+                        </div>
                     </div>
-                    <div class="search-box">
-                        <input type="text" id="searchInput" placeholder="Nombre del test..." autocomplete="off">
-                        <button id="btnSearch" class="search-btn">
-                            <img src="icons/bx-search.svg" alt="Buscar">
+
+                    <div class="card-container">
+                        <div class="table-actions">
+                            <div style="display:flex;gap:12px;align-items:center;">
+                                <select id="filterAula" class="page-select" style="padding:8px 12px;">
+                                    <option value="">Todas mis aulas</option>
+                                </select>
+                                <input type="date" id="filterFecha" class="page-select" style="padding:8px 12px;" title="Fecha de creación">
+                                <button type="button" id="btnNuevoTest" class="btn-primary">
+                                    <span class="plus-icon">+</span> Nuevo
+                                </button>
+                            </div>
+                            <div class="action-group-right">
+                                <button id="btnAsignarBloque" class="btn-secondary">
+                                    <img src="icons/bx-link.svg" alt="" class="btn-icon">
+                                    <span>Asignar</span>
+                                </button>
+                                <button id="btnEliminarBloque" class="btn-danger-outline">
+                                    <img src="icons/bx-trash-alt.svg" alt="" class="btn-icon">
+                                    <span>Eliminar</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th class="col-checkbox"><input type="checkbox" id="selectAllCheckbox"></th>
+                                        <th>Nombre</th>
+                                        <th>Aulas Asignadas</th>
+                                        <th>Origen Preguntas</th>
+                                        <th class="text-center">Preguntas</th>
+                                        <th class="text-center">Disponibilidad</th>
+                                        <th class="text-center">Estado</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="testsTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <footer class="pagination-footer">
+                        <div class="pagination-info" id="paginationInfo">Mostrando 0 de 0 Evaluaciones existentes</div>
+                        <div class="pagination-controls">
+                            <button id="btnPrevPage" class="pagination-arrow">&lt;</button>
+                            <button id="btnFirstPage" class="page-badge active">1</button>
+                            <span class="page-text">de</span>
+                            <button id="btnLastPage" class="page-badge-secondary">1</button>
+                            <button id="btnNextPage" class="pagination-arrow">&gt;</button>
+                            <span class="page-text ml-15">Página</span>
+                            <select id="pageSelect" class="page-select"><option value="1">1</option></select>
+                            <span class="page-text">de <span id="totalPagesLabel">1</span></span>
+                        </div>
+                    </footer>
+                </div>
+
+                <!-- VISTA NUEVO TEST (se alterna con la lista) -->
+                <section id="vistaNuevo" hidden>
+                    <div class="page-header">
+                        <div class="title-section">
+                            <h1>NUEVO TEST</h1>
+                            <p class="subtitle">Defina los datos generales, las aulas y las preguntas de la evaluación</p>
+                        </div>
+                    </div>
+                    <form id="testForm" class="card-container" style="padding:24px;" novalidate>
+                        <div class="form-group">
+                            <label for="ntNombre">Nombre del test</label>
+                            <input type="text" id="ntNombre" placeholder="Ej. Sumas y restas - Unidad 1" maxlength="150">
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                            <div class="form-group">
+                                <label for="ntDesde">Disponible desde (opcional)</label>
+                                <input type="datetime-local" id="ntDesde">
+                            </div>
+                            <div class="form-group">
+                                <label for="ntHasta">Disponible hasta (opcional)</label>
+                                <input type="datetime-local" id="ntHasta">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="ntAulaInput">Asignar a aulas (opcional)</label>
+                            <input type="text" id="ntAulaInput" list="ntAulaDatalist" autocomplete="off" placeholder="Escribe para filtrar y elige de la lista...">
+                            <datalist id="ntAulaDatalist"></datalist>
+                            <div id="ntAulaChips" style="min-height:32px;margin-top:8px;"></div>
+                        </div>
+
+                        <h3 style="margin:8px 0 12px;">Preguntas</h3>
+                        <div id="preguntasContainer"></div>
+                        <button type="button" id="btnAgregarPregunta" class="btn-secondary" style="margin-bottom:20px;">
+                            <span class="plus-icon">+</span> Agregar pregunta
                         </button>
-                    </div>
-                </div>
 
-                <div class="card-container">
-                    <div class="table-actions">
-                        <div style="display:flex;gap:12px;align-items:center;">
-                            <select id="filterAula" class="page-select" style="padding:8px 12px;">
-                                <option value="">Todas mis aulas</option>
-                            </select>
-                            <input type="date" id="filterFecha" class="page-select" style="padding:8px 12px;" title="Fecha de creación">
-                            <a href="nuevo-test.html" class="btn-primary" style="text-decoration:none;">
-                                <span class="plus-icon">+</span> Nuevo
-                            </a>
+                        <div class="modal-actions">
+                            <button type="button" class="btn-cancel" id="btnCancelarNuevo">Cancelar</button>
+                            <button type="submit" class="btn-primary" id="btnGuardarTest">Guardar test</button>
                         </div>
-                        <div class="action-group-right">
-                            <button id="btnAsignarBloque" class="btn-secondary">
-                                <img src="icons/bx-link.svg" alt="" class="btn-icon">
-                                <span>Asignar</span>
-                            </button>
-                            <button id="btnEliminarBloque" class="btn-danger-outline">
-                                <img src="icons/bx-trash-alt.svg" alt="" class="btn-icon">
-                                <span>Eliminar</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th class="col-checkbox"><input type="checkbox" id="selectAllCheckbox"></th>
-                                    <th>Nombre</th>
-                                    <th>Aulas Asignadas</th>
-                                    <th>Origen Preguntas</th>
-                                    <th class="text-center">Preguntas</th>
-                                    <th class="text-center">Disponibilidad</th>
-                                    <th class="text-center">Estado</th>
-                                    <th class="text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="testsTableBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <footer class="pagination-footer">
-                    <div class="pagination-info" id="paginationInfo">Mostrando 0 de 0 Evaluaciones existentes</div>
-                    <div class="pagination-controls">
-                        <button id="btnPrevPage" class="pagination-arrow">&lt;</button>
-                        <button id="btnFirstPage" class="page-badge active">1</button>
-                        <span class="page-text">de</span>
-                        <button id="btnLastPage" class="page-badge-secondary">1</button>
-                        <button id="btnNextPage" class="pagination-arrow">&gt;</button>
-                        <span class="page-text ml-15">Página</span>
-                        <select id="pageSelect" class="page-select"><option value="1">1</option></select>
-                        <span class="page-text">de <span id="totalPagesLabel">1</span></span>
-                    </div>
-                </footer>
+                    </form>
+                </section>
             </main>
         </div>
     </div>

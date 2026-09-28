@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Recursos - InkMath</title>
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/aulas.css">
+    <script src="js/layout.js" defer></script>
+    <style>[hidden]{display:none!important}</style>
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar"></aside>
+
+        <div class="main-wrapper">
+            <header class="topbar">
+                <div class="breadcrumb">
+                    <span class="bc-muted">Recursos</span>
+                    <span class="bc-separator">&gt;</span>
+                    <span class="bc-active">Gestor de Recursos</span>
+                </div>
+                <div class="user-profile">
+                    <div class="user-info">
+                        <span class="user-name" id="profileName">Cargando...</span>
+                        <span class="user-role">-</span>
+                    </div>
+                    <div class="user-avatar" id="profileInitials">--</div>
+                    <button class="btn-notification" aria-label="Notificaciones">
+                        <img src="icons/bx-bell.svg" alt="Notificaciones">
+                    </button>
+                </div>
+            </header>
+
+            <main class="content-body">
+                <div class="page-header">
+                    <div class="title-section">
+                        <h1>GESTOR DE RECURSOS</h1>
+                        <p class="subtitle">Administre documentos, enlaces y videos para sus aulas</p>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Título del recurso..." autocomplete="off">
+                        <button id="btnSearch" class="search-btn">
+                            <img src="icons/bx-search.svg" alt="Buscar">
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-container">
+                    <div class="table-actions">
+                        <div style="display:flex;gap:12px;align-items:center;">
+                            <select id="filterTipo" class="page-select" style="padding:8px 12px;">
+                                <option value="">Todos los tipos</option>
+                                <option value="1">Documento</option>
+                                <option value="2">Enlace</option>
+                                <option value="3">Video</option>
+                            </select>
+                            <button type="button" id="btnNuevoRecurso" class="btn-primary">
+                                <span class="plus-icon">+</span> Nuevo
+                            </button>
+                        </div>
+                        <div class="action-group-right">
+                            <button id="btnAsignarBloque" class="btn-secondary">
+                                <img src="icons/bx-link.svg" alt="" class="btn-icon">
+                                <span>Asignar a aulas</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-checkbox"><input type="checkbox" id="selectAllCheckbox"></th>
+                                    <th>Título</th>
+                                    <th class="text-center">Tipo</th>
+                                    <th>Referencia</th>
+                                    <th class="text-center">Creado</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recursosTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <footer class="pagination-footer">
+                    <div class="pagination-info" id="paginationInfo">Mostrando 0 recursos</div>
+                    <div class="pagination-controls">
+                        <button id="btnPrevPage" class="pagination-arrow">&lt;</button>
+                        <span class="page-text">Página</span>
+                        <button id="btnPageNum" class="page-badge active">1</button>
+                        <button id="btnNextPage" class="pagination-arrow">&gt;</button>
+                    </div>
+                </footer>
+            </main>
+        </div>
+    </div>
+
+    <!-- MODAL NUEVO RECURSO -->
+    <div id="modalRecurso" class="modal-overlay">
+        <div class="modal-card">
+            <h2>Nuevo Recurso</h2>
+            <form id="recursoForm" novalidate>
+                <div class="form-group">
+                    <label for="recTitulo">Título</label>
+                    <input type="text" id="recTitulo" placeholder="Ej. Guía de fracciones" maxlength="150">
+                </div>
+                <div class="form-group">
+                    <label for="recTipo">Tipo</label>
+                    <select id="recTipo">
+                        <option value="1">Documento (PDF / JPG / PNG)</option>
+                        <option value="2">Enlace externo</option>
+                        <option value="3">Video (YouTube)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="grpArchivo">
+                    <label for="recArchivo">Archivo</label>
+                    <input type="file" id="recArchivo" accept=".pdf,.jpg,.jpeg,.png">
+                </div>
+                <div class="form-group" id="grpUrl" hidden>
+                    <label for="recUrl" id="lblUrl">URL</label>
+                    <input type="url" id="recUrl" placeholder="https://">
+                </div>
+                <div class="form-group">
+                    <label for="recAulaInput">Asignar a aulas (opcional)</label>
+                    <input type="text" id="recAulaInput" list="recAulaDatalist" autocomplete="off" placeholder="Escribe para filtrar y elige de la lista...">
+                    <datalist id="recAulaDatalist"></datalist>
+                    <div id="recAulaChips" style="min-height:32px;margin-top:8px;"></div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="btnCancelarRecurso">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btnGuardarRecurso">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL ASIGNAR RECURSOS A AULAS -->
+    <div id="modalAsignar" class="modal-overlay">
+        <div class="modal-card">
+            <h2>Asignar recursos a aulas</h2>
+            <p id="asignarResumen" class="subtitle" style="margin-bottom:16px;"></p>
+            <div class="form-group">
+                <label for="asignarInput">Buscar aula</label>
+                <input type="text" id="asignarInput" list="asignarDatalist" autocomplete="off" placeholder="Escribe para filtrar y elige de la lista...">
+                <datalist id="asignarDatalist"></datalist>
+            </div>
+            <div id="asignarChips" style="min-height:32px;margin-bottom:12px;"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" id="btnCancelarAsignar">Cancelar</button>
+                <button type="button" class="btn-primary" id="btnConfirmarAsignar" disabled>Asignar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/recursos.js"></script>
+</body>
+</html>
