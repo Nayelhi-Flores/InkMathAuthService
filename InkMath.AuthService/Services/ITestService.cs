@@ -1,7 +1,8 @@
-﻿using InkMath.AuthService.DTOs;
-using InkMath.AuthService.Data;
+﻿using InkMath.AuthService.Data;
+using InkMath.AuthService.DTOs;
 using InkMath.AuthService.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace InkMath.AuthService.Services
 {
@@ -9,7 +10,8 @@ namespace InkMath.AuthService.Services
     {
         Task<TestDetalleResponseDto> CrearTestTransaccionalAsync(CrearTestDto dto);
         Task<bool> AnularTestAsync(long testId, long usuarioId);
-        Task<bool> AsignarTestAAulasAsync(AsignarTestAulaDto dto, long usuarioId);
+        Task<(bool Exito, string Mensaje)> AsignarTestsAAulasAsync(long maestroId, List<long> testIds, List<long> aulaIds);
+        Task<RespuestaPaginadaDto<TestDetalleResponseDto>> ObtenerTestsPaginadosPorMaestroAsync(long maestroId, ConsultaTestsPaginadaDto dto);
         Task<List<TestDetalleResponseDto>> ObtenerTestsPorMaestroAsync(long maestroId);
     }
 
@@ -120,42 +122,59 @@ namespace InkMath.AuthService.Services
             }
         }
 
-        public async Task<bool> AsignarTestAAulasAsync(AsignarTestAulaDto dto, long usuarioId)
+        public async Task<(bool Exito, string Mensaje)> AsignarTestsAAulasAsync(long maestroId, List<long> testIds, List<long> aulaIds)
         {
-            var testExiste = await _context.TestsPersonalizados.AnyAsync(t => t.Id == dto.TestId && t.EstaActivo);
-            if (!testExiste || dto.AulaIds == null || dto.AulaIds.Count == 0) return false;
+            if (testIds == null || !testIds.Any() || aulaIds == null || !aulaIds.Any())
+                return (false, "Debe seleccionar al menos un test y un aula.");
 
-            // Obtener asignaciones existentes para evitar duplicar registros en la clave compuesta
-            var asignacionesExistentes = await _context.AulaTests
-                .Where(at => at.TestId == dto.TestId && dto.AulaIds.Contains(at.AulaId))
-                .Select(at => at.AulaId)
+            // Validar propiedad del maestro
+            var testsValidos = await _context.TestsPersonalizados
+                .Where(t => testIds.Contains(t.Id) && t.MaestroId == maestroId)
+                .Select(t => t.Id)
                 .ToListAsync();
 
-            var nuevasAulas = dto.AulaIds.Except(asignacionesExistentes).ToList();
+            var aulasValidas = await _context.Aulas
+                .Where(a => aulaIds.Contains(a.Id) && a.MaestroId == maestroId && a.EstaActivo)
+                .Select(a => a.Id)
+                .ToListAsync();
 
-            if (nuevasAulas.Count > 0)
+            if (!testsValidos.Any() || !aulasValidas.Any())
+                return (false, "No se encontraron tests o aulas válidas.");
+
+            // Obtener relaciones ya existentes en la tabla intermedia
+            var existentes = await _context.AulaTests
+                .Where(at => aulasValidas.Contains(at.AulaId) && testsValidos.Contains(at.TestId))
+                .Select(at => new { at.AulaId, at.TestId })
+                .ToListAsync();
+
+            var hashExistentes = new HashSet<(long AulaId, long TestId)>(
+                existentes.Select(x => (x.AulaId, x.TestId))
+            );
+
+            var nuevasAsignaciones = new List<AulaTest>();
+            foreach (var aulaId in aulasValidas)
             {
-                foreach (var aulaId in nuevasAulas)
+                foreach (var testId in testsValidos)
                 {
-                    _context.AulaTests.Add(new AulaTest
+                    if (!hashExistentes.Contains((aulaId, testId)))
                     {
-                        AulaId = aulaId,
-                        TestId = dto.TestId,
-                        FechaAsignacion = DateTimeOffset.UtcNow
-                    });
+                        nuevasAsignaciones.Add(new AulaTest
+                        {
+                            AulaId = aulaId,
+                            TestId = testId,
+                            FechaAsignacion = DateTime.UtcNow
+                        });
+                    }
                 }
-
-                await _context.SaveChangesAsync();
-
-                // Registrar auditoría en MongoDB
-                await _auditoriaService.RegistrarEventoAsync(
-                    usuarioId,
-                    "ASIGNAR_TEST_AULAS",
-                    $"Se asignó el test ID: {dto.TestId} a {nuevasAulas.Count} nuevas aulas."
-                );
             }
 
-            return true;
+            if (nuevasAsignaciones.Any())
+            {
+                _context.AulaTests.AddRange(nuevasAsignaciones);
+                await _context.SaveChangesAsync();
+            }
+
+            return (true, $"Se asignaron los tests a las aulas correspondientes.");
         }
 
         public async Task<bool> AnularTestAsync(long testId, long usuarioId)
@@ -178,7 +197,7 @@ namespace InkMath.AuthService.Services
         }
 
         public async Task<List<TestDetalleResponseDto>> ObtenerTestsPorMaestroAsync(long maestroId)
-        {
+            {
             return await _context.TestsPersonalizados
                 .Where(t => t.MaestroId == maestroId && t.EstaActivo)
                 .OrderByDescending(t => t.CreadoEn)
@@ -194,6 +213,80 @@ namespace InkMath.AuthService.Services
                     TotalPreguntas = t.Preguntas.Count
                 })
                 .ToListAsync();
+        }
+
+        public async Task<RespuestaPaginadaDto<TestDetalleResponseDto>> ObtenerTestsPaginadosPorMaestroAsync(long maestroId, ConsultaTestsPaginadaDto dto)
+        {
+            int limite = Math.Min(dto.Limite, 50);
+
+            // 1. Base Query con No Tracking
+            var query = _context.TestsPersonalizados
+                .AsNoTracking()
+                .Where(t => t.MaestroId == maestroId && t.EstaActivo);
+
+            // 2. Filtro por Texto de Búsqueda (Nombre)
+            if (!string.IsNullOrWhiteSpace(dto.Busqueda))
+            {
+                string busquedaLower = dto.Busqueda.Trim().ToLower();
+                query = query.Where(t => t.Nombre.ToLower().Contains(busquedaLower));
+            }
+
+            // 3. Filtro por Aula Específica (Mediante subconsulta a AulaTests)
+            if (dto.AulaId.HasValue && dto.AulaId.Value > 0)
+            {
+                query = query.Where(t => _context.AulaTests.Any(at => at.TestId == t.Id && at.AulaId == dto.AulaId.Value));
+            }
+
+            // 4. Filtro por Fecha Exacta (Rango del día completo UTC)
+            if (dto.Fecha.HasValue)
+            {
+                var fechaInicio = DateTime.SpecifyKind(dto.Fecha.Value.Date, DateTimeKind.Utc);
+                var fechaFin = fechaInicio.AddDays(1);
+
+                query = query.Where(t => t.CreadoEn >= fechaInicio && t.CreadoEn < fechaFin);
+            }
+
+            int totalRegistros = await query.CountAsync();
+
+            // 5. Aplicar Cursores de Paginación
+            if (dto.UltimaFecha.HasValue && dto.UltimoId.HasValue)
+            {
+                query = query.Where(t =>
+                    t.CreadoEn < dto.UltimaFecha.Value ||
+                    (t.CreadoEn == dto.UltimaFecha.Value && t.Id < dto.UltimoId.Value));
+            }
+
+            // 6. Ejecución optimizada
+            var registros = await query
+                .OrderByDescending(t => t.CreadoEn)
+                .ThenByDescending(t => t.Id)
+                .Take(limite + 1)
+                .Select(t => new TestDetalleResponseDto
+                {
+                    TestId = t.Id,
+                    Nombre = t.Nombre,
+                    MaestroId = t.MaestroId,
+                    FechaDisponibleDesde = t.FechaDisponibleDesde,
+                    FechaDisponibleHasta = t.FechaDisponibleHasta,
+                    AulasAsignadas = _context.AulaTests.Count(at => at.TestId == t.Id),
+                    CreadoEn = t.CreadoEn,
+                    TotalPreguntas = t.Preguntas.Count
+                })
+                .ToListAsync();
+
+            bool tieneMasPaginas = registros.Count > limite;
+            var datosPaginados = tieneMasPaginas ? registros.Take(limite).ToList() : registros;
+            var ultimoRegistro = datosPaginados.LastOrDefault();
+
+            return new RespuestaPaginadaDto<TestDetalleResponseDto>
+            {
+                Datos = datosPaginados,
+                SiguienteUltimoId = ultimoRegistro?.TestId,
+                SiguienteUltimaFecha = ultimoRegistro?.CreadoEn,
+                TieneMasPaginas = tieneMasPaginas,
+                TotalRegistros = totalRegistros,
+                TotalPaginas = (int)Math.Ceiling((double)totalRegistros / limite)
+            };
         }
     }
 }

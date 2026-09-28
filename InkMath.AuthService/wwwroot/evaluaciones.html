@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Aulas - InkMath</title>
+    <title>Gestor de Tests - InkMath</title>
     <link rel="stylesheet" href="css/theme.css">
     <link rel="stylesheet" href="css/aulas.css">
     <script src="js/layout.js" defer></script>
@@ -15,9 +15,9 @@
         <div class="main-wrapper">
             <header class="topbar">
                 <div class="breadcrumb">
-                    <span class="bc-muted">Aulas</span>
+                    <span class="bc-muted">Evaluaciones</span>
                     <span class="bc-separator">&gt;</span>
-                    <span class="bc-active">Gestor de Aulas</span>
+                    <span class="bc-active">Gestor de Tests</span>
                 </div>
                 <div class="user-profile">
                     <div class="user-info">
@@ -34,11 +34,11 @@
             <main class="content-body">
                 <div class="page-header">
                     <div class="title-section">
-                        <h1>GESTOR DE AULAS</h1>
-                        <p class="subtitle">Cree y configure espacios seguros de diversión y aprendizaje</p>
+                        <h1>GESTOR DE TESTS</h1>
+                        <p class="subtitle">Cree y configure evaluaciones dinámicas para sus alumnos</p>
                     </div>
                     <div class="search-box">
-                        <input type="text" id="searchInput" placeholder="Nombre del aula..." autocomplete="off">
+                        <input type="text" id="searchInput" placeholder="Nombre del test..." autocomplete="off">
                         <button id="btnSearch" class="search-btn">
                             <img src="icons/bx-search.svg" alt="Buscar">
                         </button>
@@ -47,19 +47,21 @@
 
                 <div class="card-container">
                     <div class="table-actions">
-                        <button id="btnNuevaAula" class="btn-primary">
-                            <span class="plus-icon">+</span> Nuevo
-                        </button>
+                        <div style="display:flex;gap:12px;align-items:center;">
+                            <select id="filterAula" class="page-select" style="padding:8px 12px;">
+                                <option value="">Todas mis aulas</option>
+                            </select>
+                            <input type="date" id="filterFecha" class="page-select" style="padding:8px 12px;" title="Fecha de creación">
+                            <a href="nuevo-test.html" class="btn-primary" style="text-decoration:none;">
+                                <span class="plus-icon">+</span> Nuevo
+                            </a>
+                        </div>
                         <div class="action-group-right">
-                            <button id="btnAsignarRecurso" class="btn-secondary">
+                            <button id="btnAsignarBloque" class="btn-secondary">
                                 <img src="icons/bx-link.svg" alt="" class="btn-icon">
-                                <span>Asignar Recurso</span>
+                                <span>Asignar</span>
                             </button>
-                            <button id="btnAsignarTest" class="btn-secondary">
-                                <img src="icons/bx-link.svg" alt="" class="btn-icon">
-                                <span>Asignar Test</span>
-                            </button>
-                            <button id="btnEliminar" class="btn-danger-outline">
+                            <button id="btnEliminarBloque" class="btn-danger-outline">
                                 <img src="icons/bx-trash-alt.svg" alt="" class="btn-icon">
                                 <span>Eliminar</span>
                             </button>
@@ -71,21 +73,22 @@
                             <thead>
                                 <tr>
                                     <th class="col-checkbox"><input type="checkbox" id="selectAllCheckbox"></th>
-                                    <th>Código</th>
                                     <th>Nombre</th>
-                                    <th class="text-center">Estudiantes</th>
-                                    <th class="text-center">Recursos</th>
-                                    <th class="text-center">Evaluaciones</th>
+                                    <th>Aulas Asignadas</th>
+                                    <th>Origen Preguntas</th>
+                                    <th class="text-center">Preguntas</th>
+                                    <th class="text-center">Disponibilidad</th>
+                                    <th class="text-center">Estado</th>
                                     <th class="text-center">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody id="aulasTableBody"></tbody>
+                            <tbody id="testsTableBody"></tbody>
                         </table>
                     </div>
                 </div>
 
                 <footer class="pagination-footer">
-                    <div class="pagination-info" id="paginationInfo">Mostrando 0 de 0 aulas existentes</div>
+                    <div class="pagination-info" id="paginationInfo">Mostrando 0 de 0 Evaluaciones existentes</div>
                     <div class="pagination-controls">
                         <button id="btnPrevPage" class="pagination-arrow">&lt;</button>
                         <button id="btnFirstPage" class="page-badge active">1</button>
@@ -101,43 +104,25 @@
         </div>
     </div>
 
-    <!-- MODAL CREAR / EDITAR AULA -->
-    <div id="aulaModal" class="modal-overlay">
+    <!-- MODAL ASIGNAR TESTS A AULAS -->
+    <div id="modalAsignarAulas" class="modal-overlay">
         <div class="modal-card">
-            <h2 id="modalTitle">Nueva Aula</h2>
-            <form id="aulaForm">
-                <input type="hidden" id="aulaIdInput">
-                <div class="form-group">
-                    <label for="nombreAulaInput">Nombre del Aula</label>
-                    <input type="text" id="nombreAulaInput" required placeholder="Ej. 2do Primaria Sección A">
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-cancel" id="btnCloseModal">Cancelar</button>
-                    <button type="submit" class="btn-primary">Guardar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL ASIGNAR (recursos / tests) -->
-    <div id="modalAsignar" class="modal-overlay">
-        <div class="modal-card">
-            <h2 id="asignarTitulo">Asignar</h2>
-            <p id="asignarResumen" class="subtitle" style="margin-bottom:16px;"></p>
+            <h2>Asignar Tests Seleccionados a Aulas</h2>
+            <p id="lblTestsSeleccionados" class="subtitle" style="margin-bottom:16px;"></p>
             <div class="form-group">
-                <label for="asignarInput" id="asignarLabel">Buscar</label>
-                <input type="text" id="asignarInput" list="asignarDatalist" autocomplete="off" placeholder="Escribe para filtrar y elige de la lista...">
-                <datalist id="asignarDatalist"></datalist>
+                <label for="asignarAulaInput">Buscar aula</label>
+                <input type="text" id="asignarAulaInput" list="asignarAulaDatalist" autocomplete="off" placeholder="Escribe para filtrar y elige de la lista...">
+                <datalist id="asignarAulaDatalist"></datalist>
             </div>
-            <div id="asignarChips" style="min-height:32px;margin-bottom:12px;"></div>
+            <div id="asignarAulaChips" style="min-height:32px;margin-bottom:12px;"></div>
             <div class="modal-actions">
-                <button type="button" class="btn-cancel" id="btnCancelarAsignar">Cancelar</button>
-                <button type="button" class="btn-primary" id="btnConfirmarAsignar" disabled>Asignar</button>
+                <button type="button" class="btn-cancel" id="btnCancelarAsignacionAulas">Cancelar</button>
+                <button type="button" class="btn-primary" id="btnConfirmarAsignacionAulas" disabled>Confirmar Asignación</button>
             </div>
         </div>
     </div>
 
     <script src="js/api.js"></script>
-    <script src="js/aulas.js"></script>
+    <script src="js/evaluaciones.js"></script>
 </body>
 </html>

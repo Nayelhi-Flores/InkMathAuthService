@@ -1,4 +1,5 @@
 ﻿using InkMath.AuthService.DTOs;
+using InkMath.AuthService.Models;
 using InkMath.AuthService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -49,6 +50,28 @@ namespace InkMath.AuthService.Controllers
 
             var resultado = await _aulaService.ObtenerAulasPaginadasPorMaestroAsync(maestroId, dto);
             return Ok(resultado);
+        }
+
+        [HttpGet("mis-aulas")]
+        [Authorize(Roles = "1,2")]
+        public async Task<IActionResult> ObtenerMisAulas()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            var roleClaim = User.FindFirst(ClaimTypes.Role)?.Value
+                         ?? User.FindFirst("role")?.Value;
+
+            if (!long.TryParse(userIdClaim, out long usuarioId))
+            {
+                return Unauthorized(new { mensaje = "Usuario no autenticado." });
+            }
+
+            string rolNombre = (roleClaim == "2") ? "Maestro" : "Estudiante";
+
+            var aulas = await _aulaService.ObtenerAulasPorUsuarioAsync(usuarioId, rolNombre);
+
+            return Ok(aulas);
         }
 
         [HttpPut("{id:long}")]

@@ -65,7 +65,26 @@
               "type": "string",
               "format": "date-time"
             }
+          },
+          {
+            "name": "Busqueda",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Aulas/mis-aulas": {
+      "get": {
+        "tags": [
+          "Aulas"
         ],
         "responses": {
           "200": {
@@ -684,6 +703,67 @@
         }
       }
     },
+    "/api/Tests/paginados": {
+      "get": {
+        "tags": [
+          "Tests"
+        ],
+        "parameters": [
+          {
+            "name": "Limite",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "UltimoId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "UltimaFecha",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "Busqueda",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "AulaId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "Fecha",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Transacciones/crear": {
       "post": {
         "tags": [
@@ -922,9 +1002,13 @@
       "AsignarTestAulaDto": {
         "type": "object",
         "properties": {
-          "testId": {
-            "type": "integer",
-            "format": "int64"
+          "testIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "nullable": true
           },
           "aulaIds": {
             "type": "array",

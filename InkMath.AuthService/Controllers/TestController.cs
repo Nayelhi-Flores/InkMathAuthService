@@ -60,21 +60,26 @@ namespace InkMath.AuthService.Controllers
         [Authorize(Roles = "1,2")]
         public async Task<IActionResult> AsignarTestAAulas([FromBody] AsignarTestAulaDto dto)
         {
-            if (dto == null || dto.TestId <= 0 || dto.AulaIds.Count == 0)
+            if (dto == null || dto.TestIds == null || !dto.TestIds.Any() || dto.AulaIds == null || !dto.AulaIds.Any())
             {
-                return BadRequest(new { mensaje = "Debe proporcionar un test válido y al menos un aula." });
+                return BadRequest(new { mensaje = "Debe proporcionar al menos un test válido y al menos un aula válida." });
             }
 
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            long.TryParse(userIdClaim, out long usuarioId);
+            // Extraer el ID del usuario desde las Claims del JWT
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!long.TryParse(userIdClaim, out long usuarioId))
+            {
+                return Unauthorized(new { mensaje = "Usuario no autenticado correctamente." });
+            }
 
-            var exito = await _testService.AsignarTestAAulasAsync(dto, usuarioId);
+            var (exito, mensaje) = await _testService.AsignarTestsAAulasAsync(usuarioId, dto.TestIds, dto.AulaIds);
+
             if (!exito)
             {
-                return NotFound(new { mensaje = "El test especificado no existe o no está activo." });
+                return BadRequest(new { mensaje });
             }
 
-            return Ok(new { mensaje = $"Test {dto.TestId} asignado correctamente a las aulas especificadas." });
+            return Ok(new { mensaje = mensaje ?? "Asignación realizada exitosamente." });
         }
 
         [HttpGet("mis-tests")]
@@ -89,6 +94,22 @@ namespace InkMath.AuthService.Controllers
 
             var tests = await _testService.ObtenerTestsPorMaestroAsync(maestroId);
             return Ok(new { datos = tests });
+        }
+
+        [HttpGet("paginados")]
+        [Authorize(Roles = "1,2")]
+        public async Task<IActionResult> ObtenerPaginados([FromQuery] ConsultaTestsPaginadaDto dto)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                           ?? User.FindFirst("sub")?.Value;
+
+            if (!long.TryParse(userIdClaim, out long maestroId))
+            {
+                return Unauthorized(new { mensaje = "Usuario no autenticado." });
+            }
+
+            var resultado = await _testService.ObtenerTestsPaginadosPorMaestroAsync(maestroId, dto);
+            return Ok(resultado);
         }
     }
 }

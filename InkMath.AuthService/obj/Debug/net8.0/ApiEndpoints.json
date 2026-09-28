@@ -70,6 +70,16 @@
   },
   {
     "ContainingType": "InkMath.AuthService.Controllers.AulasController",
+    "Method": "ObtenerMisAulas",
+    "RelativePath": "api/Aulas/mis-aulas",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.AulasController",
     "Method": "ObtenerAulasPaginadas",
     "RelativePath": "api/Aulas/paginadas",
     "HttpMethod": "GET",
@@ -89,6 +99,11 @@
       {
         "Name": "UltimaFecha",
         "Type": "System.Nullable\u00601[[System.DateTimeOffset, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "Busqueda",
+        "Type": "System.String",
         "IsRequired": false
       }
     ],
@@ -405,6 +420,47 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.TestsController",
+    "Method": "ObtenerPaginados",
+    "RelativePath": "api/Tests/paginados",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "Limite",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "UltimoId",
+        "Type": "System.Nullable\u00601[[System.Int64, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "UltimaFecha",
+        "Type": "System.Nullable\u00601[[System.DateTimeOffset, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "Busqueda",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "AulaId",
+        "Type": "System.Nullable\u00601[[System.Int64, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "Fecha",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": []
   },
   {

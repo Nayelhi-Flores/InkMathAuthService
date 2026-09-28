@@ -204,19 +204,23 @@ namespace InkMath.AuthService.Services
             return (true, "Aula actualizada exitosamente.");
         }
 
-        public async Task<RespuestaPaginadaDto<AulaResponseDto>> ObtenerAulasPaginadasPorMaestroAsync(long maestroId,ConsultaAulasPaginadaDto dto)
+        public async Task<RespuestaPaginadaDto<AulaResponseDto>> ObtenerAulasPaginadasPorMaestroAsync(long maestroId, ConsultaAulasPaginadaDto dto)
         {
-            // Limitar el tamaño máximo de página para evitar sobrecargar la memoria
             int limite = Math.Min(dto.Limite, 5);
 
-            // 1. Filtrar únicamente aulas del maestro que estén ACTIVAS
             var query = _context.Aulas
                 .AsNoTracking()
                 .Where(a => a.MaestroId == maestroId && a.EstaActivo);
 
+            // Filtro por nombre de aula en Backend
+            if (!string.IsNullOrWhiteSpace(dto.Busqueda))
+            {
+                string busquedaLower = dto.Busqueda.Trim().ToLower();
+                query = query.Where(a => a.Nombre.ToLower().Contains(busquedaLower));
+            }
+
             int totalRegistros = await query.CountAsync();
 
-            // 2. Aplicar el filtro del Cursor si el cliente envió los parámetros de la página anterior
             if (dto.UltimaFecha.HasValue && dto.UltimoId.HasValue)
             {
                 query = query.Where(a =>
@@ -224,7 +228,6 @@ namespace InkMath.AuthService.Services
                     (a.CreadoEn == dto.UltimaFecha.Value && a.Id < dto.UltimoId.Value));
             }
 
-            // 3. Traer un registro extra (limite + 1) para saber si existe una página siguiente
             var registros = await query
                 .OrderByDescending(a => a.CreadoEn)
                 .ThenByDescending(a => a.Id)
@@ -235,7 +238,6 @@ namespace InkMath.AuthService.Services
                     Nombre = a.Nombre,
                     CodigoAcceso = a.CodigoAcceso,
                     CreadoEn = a.CreadoEn,
-
                     TotalEstudiantes = _context.AulaEstudiantes.Count(ae => ae.AulaId == a.Id),
                     TotalRecursos = _context.AulasRecursos.Count(ar => ar.AulaId == a.Id),
                     TotalTests = _context.AulaTests.Count(at => at.AulaId == a.Id)
@@ -243,8 +245,6 @@ namespace InkMath.AuthService.Services
                 .ToListAsync();
 
             bool tieneMasPaginas = registros.Count > limite;
-
-            // Si hay página siguiente, omitimos el elemento extra traído para el check
             var datosPaginados = tieneMasPaginas ? registros.Take(limite).ToList() : registros;
             var ultimoRegistro = datosPaginados.LastOrDefault();
 

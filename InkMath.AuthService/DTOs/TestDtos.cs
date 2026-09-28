@@ -32,8 +32,8 @@
 
     public class AsignarTestAulaDto
     {
-        public long TestId { get; set; }
-        public List<long> AulaIds { get; set; } = new();
+        public List<long> TestIds { get; set; } = new List<long>();
+        public List<long> AulaIds { get; set; } = new List<long>();
     }
 
     public class RegistrarRespuestaDto
