@@ -70,9 +70,9 @@
 
     function estado(t) {
         const ahora = new Date();
-        if (t.fechaDisponibleDesde && ahora < new Date(t.fechaDisponibleDesde)) return ['Programado', '#B45309', '#FEF3C7'];
-        if (t.fechaDisponibleHasta && ahora > new Date(t.fechaDisponibleHasta)) return ['Finalizado', '#B91C1C', '#FEE2E2'];
-        return ['Activo', '#047857', '#D1FAE5'];
+        if (t.fechaDisponibleDesde && ahora < new Date(t.fechaDisponibleDesde)) return ['Programado', 'badge-warning'];
+        if (t.fechaDisponibleHasta && ahora > new Date(t.fechaDisponibleHasta)) return ['Finalizado', 'badge-danger'];
+        return ['Activo', 'badge-success'];
     }
 
     function renderTabla(tests) {
@@ -82,7 +82,7 @@
             return;
         }
         tbody.innerHTML = tests.map(t => {
-            const [txt, color, bg] = estado(t);
+            const [txt, cls] = estado(t);
             const disp = (t.fechaDisponibleDesde || t.fechaDisponibleHasta)
                 ? `${t.fechaDisponibleDesde ? fmt(t.fechaDisponibleDesde) : '—'} – ${t.fechaDisponibleHasta ? fmt(t.fechaDisponibleHasta) : '—'}`
                 : 'Sin límite';
@@ -94,11 +94,11 @@
                 <td>Personalizado</td>
                 <td class="text-center">${t.totalPreguntas ?? 0}</td>
                 <td class="text-center">${disp}</td>
-                <td class="text-center"><span style="background:${bg};color:${color};padding:3px 10px;border-radius:12px;font-size:.8rem;font-weight:600;">${txt}</span></td>
+                <td class="text-center"><span class="badge ${cls}">${txt}</span></td>
                 <td class="text-center">
                     <div class="action-buttons">
                         <button class="btn-action view" data-action="ver" data-id="${t.testId}" title="Ver"><img src="icons/bx-eye.svg" alt="Ver"></button>
-                        <button class="btn-action" data-action="eliminar" data-id="${t.testId}" title="Eliminar"><img src="icons/bx-trash-alt.svg" alt="Eliminar"></button>
+                        <button class="btn-action delete" data-action="eliminar" data-id="${t.testId}" title="Eliminar"><img src="icons/bx-trash-alt.svg" alt="Eliminar"></button>
                     </div>
                 </td>
             </tr>`;
@@ -163,7 +163,7 @@
         const sel = new Map();
         const pintar = () => {
             listEl.innerHTML = items.filter(i => !sel.has(i.id)).map(i => `<option value="${esc(i.etiqueta)}"></option>`).join('');
-            chipsEl.innerHTML = [...sel].map(([id, et]) => `<span style="display:inline-flex;align-items:center;gap:6px;background:#EEF2FF;color:var(--primary-blue);border-radius:16px;padding:4px 10px;font-size:.82rem;margin:0 6px 6px 0;">${esc(et)}<button type="button" data-id="${id}" style="border:0;background:none;cursor:pointer;color:inherit;font-weight:700;">×</button></span>`).join('');
+            chipsEl.innerHTML = [...sel].map(([id, et]) => `<span class="chip">${esc(et)}<button type="button" data-id="${id}">×</button></span>`).join('');
             onChange(sel.size);
         };
         const agregar = parcial => {
@@ -227,7 +227,11 @@
 
     // ---------- Vista Nuevo Test ----------
     // Ajustar a los ids reales de la tabla tipos_pregunta
-    const TIPOS_PREGUNTA = { 1: { nombre: 'Opción múltiple', opciones: true }, 2: { nombre: 'Respuesta abierta', opciones: false } };
+    const TIPOS_PREGUNTA = {
+        1: { nombre: 'Opción múltiple', modo: 'multiple' },
+        2: { nombre: 'Verdadero / Falso', modo: 'vf' },
+        3: { nombre: 'Respuesta abierta', modo: 'abierta' }
+    };
 
     const vistaLista = $('vistaLista'), vistaNuevo = $('vistaNuevo'), testForm = $('testForm'), preguntasBox = $('preguntasContainer');
     const bcLista = $('bcLista'), bcSep2 = $('bcSep2'), bcNuevo = $('bcNuevo');
@@ -245,22 +249,30 @@
         }
     }
 
-    function filaOpcion(nombreRadio, checked = false) {
+    function filaOpcion(nombreRadio, checked = false, texto = '', fija = false) {
         const d = document.createElement('div');
         d.className = 'opcion-row';
-        d.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:8px;';
         d.innerHTML = `<input type="radio" name="${nombreRadio}" title="Respuesta correcta" ${checked ? 'checked' : ''}>
-            <input type="text" class="op-texto" placeholder="Texto de la opción" style="flex:1;">
-            <button type="button" data-act="quitar-opcion" style="border:0;background:none;cursor:pointer;color:#EF4444;font-weight:700;">×</button>`;
+            <input type="text" class="op-texto" placeholder="Texto de la opción" value="${esc(texto)}" ${fija ? 'readonly' : ''}>
+            ${fija ? '' : '<button type="button" class="btn-remove" data-act="quitar-opcion">×</button>'}`;
         return d;
+    }
+
+    function configurarOpciones(card) {
+        const modo = TIPOS_PREGUNTA[card.querySelector('.q-tipo').value].modo, uid = card.dataset.uid;
+        const lista = card.querySelector('.q-lista');
+        lista.innerHTML = '';
+        card.querySelector('.q-opciones').hidden = modo === 'abierta';
+        card.querySelector('[data-act="agregar-opcion"]').hidden = modo !== 'multiple';
+        if (modo === 'vf') lista.append(filaOpcion(`c${uid}`, true, 'Verdadero', true), filaOpcion(`c${uid}`, false, 'Falso', true));
+        else if (modo === 'multiple') lista.append(filaOpcion(`c${uid}`, true), filaOpcion(`c${uid}`));
     }
 
     function agregarPregunta() {
         const uid = ++uidPregunta, card = document.createElement('div');
         card.className = 'pregunta-card';
-        card.style.cssText = 'border:1px solid #E2E8F0;border-radius:12px;padding:16px;margin-bottom:16px;';
         card.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div class="pregunta-header">
                 <strong class="q-num"></strong>
                 <button type="button" data-act="quitar-pregunta" class="btn-danger-outline">Quitar</button>
             </div>
@@ -270,9 +282,8 @@
             <div class="q-opciones"><label style="display:block;margin-bottom:8px;">Opciones (marca la correcta)</label>
                 <div class="q-lista"></div>
                 <button type="button" data-act="agregar-opcion" class="btn-secondary">+ Opción</button></div>`;
-        const lista = card.querySelector('.q-lista');
-        lista.append(filaOpcion(`c${uid}`, true), filaOpcion(`c${uid}`));
         card.dataset.uid = uid;
+        configurarOpciones(card);
         preguntasBox.appendChild(card);
         numerarPreguntas();
     }
@@ -296,7 +307,7 @@
     });
     preguntasBox.addEventListener('change', e => {
         if (!e.target.classList.contains('q-tipo')) return;
-        e.target.closest('.pregunta-card').querySelector('.q-opciones').hidden = !TIPOS_PREGUNTA[e.target.value].opciones;
+        configurarOpciones(e.target.closest('.pregunta-card'));
     });
 
     function recolectarPreguntas() {
@@ -306,7 +317,7 @@
             const pregunta = card.querySelector('.q-texto').value.trim();
             if (!pregunta) throw new Error(`La pregunta ${i + 1} no tiene enunciado.`);
             let opciones = [], correcta = 0;
-            if (TIPOS_PREGUNTA[tipo].opciones) {
+            if (TIPOS_PREGUNTA[tipo].modo !== 'abierta') {
                 const filas = [...card.querySelectorAll('.opcion-row')];
                 opciones = filas.map(f => f.querySelector('.op-texto').value.trim());
                 if (opciones.some(o => !o)) throw new Error(`La pregunta ${i + 1} tiene opciones vacías.`);

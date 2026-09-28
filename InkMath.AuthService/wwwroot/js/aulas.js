@@ -162,7 +162,7 @@
         const sel = new Map();
         const pintar = () => {
             listEl.innerHTML = items.filter(i => !sel.has(i.id)).map(i => `<option value="${esc(i.etiqueta)}"></option>`).join('');
-            chipsEl.innerHTML = [...sel].map(([id, et]) => `<span style="display:inline-flex;align-items:center;gap:6px;background:#EEF2FF;color:var(--primary-blue);border-radius:16px;padding:4px 10px;font-size:.82rem;margin:0 6px 6px 0;">${esc(et)}<button type="button" data-id="${id}" style="border:0;background:none;cursor:pointer;color:inherit;font-weight:700;">×</button></span>`).join('');
+            chipsEl.innerHTML = [...sel].map(([id, et]) => `<span class="chip">${esc(et)}<button type="button" data-id="${id}">×</button></span>`).join('');
             onChange(sel.size);
         };
         const agregar = parcial => {

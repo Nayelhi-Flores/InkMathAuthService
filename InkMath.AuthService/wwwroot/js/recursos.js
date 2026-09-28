@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const LIMITE = 10;
+    const LIMITE = 5;
     const TIPOS = { 1: 'Documento', 2: 'Enlace', 3: 'Video' };
     let pagina = 1, hayMas = false, cursores = [null], cache = null, aulas = [], debounce;
 
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="col-checkbox"><input type="checkbox" class="recurso-checkbox" value="${r.id}"></td>
                 <td><strong>${esc(r.titulo)}</strong></td>
                 <td class="text-center">${TIPOS[r.tipoRecursoId] || '-'}</td>
-                <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.referencia)}">${esc(r.referencia)}</td>
+                <td class="cell-ellipsis" title="${esc(r.referencia)}">${esc(r.tipoRecursoId === 1 ? r.referencia.split('/').pop() : r.referencia)}</td>
                 <td class="text-center">${r.creadoEn ? fmt(r.creadoEn) : '-'}</td>
                 <td class="text-center">
                     <div class="action-buttons">
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const sel = new Map();
         const pintar = () => {
             listEl.innerHTML = items.filter(i => !sel.has(i.id)).map(i => `<option value="${esc(i.etiqueta)}"></option>`).join('');
-            chipsEl.innerHTML = [...sel].map(([id, et]) => `<span style="display:inline-flex;align-items:center;gap:6px;background:#EEF2FF;color:var(--primary-blue);border-radius:16px;padding:4px 10px;font-size:.82rem;margin:0 6px 6px 0;">${esc(et)}<button type="button" data-id="${id}" style="border:0;background:none;cursor:pointer;color:inherit;font-weight:700;">×</button></span>`).join('');
+            chipsEl.innerHTML = [...sel].map(([id, et]) => `<span class="chip">${esc(et)}<button type="button" data-id="${id}">×</button></span>`).join('');
             onChange(sel.size);
         };
         const agregar = parcial => {
@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---------- Nuevo recurso ----------
     const modalRecurso = $('modalRecurso'), recTipo = $('recTipo');
-    const selRecurso = crearSelector($('recAulaInput'), $('recAulaDatalist'), $('recAulaChips'), () => {});
+    const selRecurso = crearSelector($('recAulaInput'), $('recAulaDatalist'), $('recAulaChips'), () => { });
 
     function ajustarTipo() {
         const t = recTipo.value;

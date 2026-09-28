@@ -7,15 +7,6 @@
     <link rel="stylesheet" href="css/theme.css">
     <link rel="stylesheet" href="css/aulas.css">
     <script src="js/layout.js" defer></script>
-    <style>
-        [hidden] {
-            display: none !important
-        }
-
-        .bc-link {
-            cursor: pointer
-        }
-    </style>
 </head>
 <body>
     <div class="app-layout">
@@ -59,11 +50,11 @@
 
                     <div class="card-container">
                         <div class="table-actions">
-                            <div style="display:flex;gap:12px;align-items:center;">
+                            <div class="table-filters">
                                 <select id="filterAula" class="page-select" style="padding:8px 12px;">
                                     <option value="">Todas mis aulas</option>
                                 </select>
-                                <input type="date" id="filterFecha" class="page-select" style="padding:8px 12px;" title="Fecha de creación">
+                                <input type="datetime-local" id="filterFecha" class="page-select" style="padding:8px 12px;" title="Fecha de creación">
                                 <button type="button" id="btnNuevoTest" class="btn-primary">
                                     <span class="plus-icon">+</span> Nuevo
                                 </button>
@@ -122,12 +113,12 @@
                             <p class="subtitle">Defina los datos generales, las aulas y las preguntas de la evaluación</p>
                         </div>
                     </div>
-                    <form id="testForm" class="card-container" style="padding:24px;" novalidate>
+                    <form id="testForm" class="card-container form-card" novalidate>
                         <div class="form-group">
                             <label for="ntNombre">Nombre del test</label>
                             <input type="text" id="ntNombre" placeholder="Ej. Sumas y restas - Unidad 1" maxlength="150">
                         </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                        <div class="form-grid-2">
                             <div class="form-group">
                                 <label for="ntDesde">Disponible desde (opcional)</label>
                                 <input type="datetime-local" id="ntDesde">
@@ -141,12 +132,12 @@
                             <label for="ntAulaInput">Asignar a aulas (opcional)</label>
                             <input type="text" id="ntAulaInput" list="ntAulaDatalist" autocomplete="off" placeholder="Escribe para filtrar y elige de la lista...">
                             <datalist id="ntAulaDatalist"></datalist>
-                            <div id="ntAulaChips" style="min-height:32px;margin-top:8px;"></div>
+                            <div id="ntAulaChips" class="chips-box"></div>
                         </div>
 
-                        <h3 style="margin:8px 0 12px;">Preguntas</h3>
+                        <h3 class="section-title">Preguntas</h3>
                         <div id="preguntasContainer"></div>
-                        <button type="button" id="btnAgregarPregunta" class="btn-secondary" style="margin-bottom:20px;">
+                        <button type="button" id="btnAgregarPregunta" class="btn-secondary btn-add-pregunta">
                             <span class="plus-icon">+</span> Agregar pregunta
                         </button>
 
@@ -170,7 +161,7 @@
                 <input type="text" id="asignarAulaInput" list="asignarAulaDatalist" autocomplete="off" placeholder="Escribe para filtrar y elige de la lista...">
                 <datalist id="asignarAulaDatalist"></datalist>
             </div>
-            <div id="asignarAulaChips" style="min-height:32px;margin-bottom:12px;"></div>
+            <div id="asignarAulaChips" class="chips-box"></div>
             <div class="modal-actions">
                 <button type="button" class="btn-cancel" id="btnCancelarAsignacionAulas">Cancelar</button>
                 <button type="button" class="btn-primary" id="btnConfirmarAsignacionAulas" disabled>Confirmar Asignación</button>

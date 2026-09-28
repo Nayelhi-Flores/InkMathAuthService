@@ -29,6 +29,7 @@ async function guardarPerfil(e) {
     e.preventDefault();
     const token = localStorage.getItem('token');
     const nuevoNombre = document.getElementById('txtNombre').value;
+    const nuevoApellido = document.getElementById('txtApellido').value;
 
     try {
         const response = await fetch('/api/Usuarios/me', {
@@ -37,7 +38,7 @@ async function guardarPerfil(e) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ nombre: nuevoNombre })
+            body: JSON.stringify({ nombre: nuevoNombre, apellido: nuevoApellido })
         });
 
         if (response.ok) {
@@ -58,7 +59,7 @@ async function simularSuscripcion() {
 
     const token = localStorage.getItem('token');
     try {
-        const response = await fetch('/api/Usuarios/simular-suscripcion', {
+        const response = await fetch('/api/Usuarios/prueba-suscripcion', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -68,11 +69,11 @@ async function simularSuscripcion() {
         });
 
         if (response.ok) {
-            alert('¡Suscripción simulada correctamente!');
+            alert('¡Suscripción de prueba obtenida correctamente!');
             cargarDatosPerfil();
         } else {
             const err = await response.json();
-            alert(err.mensaje || 'Error al simular la suscripción');
+            alert(err.mensaje || 'Error al obtener la suscripción');
         }
     } catch (err) {
         console.error('Error:', err);

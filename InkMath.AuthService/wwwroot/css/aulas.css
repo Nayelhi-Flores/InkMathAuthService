@@ -677,3 +677,176 @@ body {
     animation: fadeInRow 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     will-change: transform, opacity;
 }
+
+[hidden] {
+    display: none !important;
+}
+
+.bc-link {
+    cursor: pointer;
+}
+
+    .bc-link:hover {
+        color: #FFFFFF;
+    }
+
+.table-filters {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.form-card {
+    padding: 24px;
+}
+
+.form-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.section-title {
+    margin: 8px 0 12px;
+    font-size: 1rem;
+    color: var(--text-dark);
+}
+
+.btn-add-pregunta {
+    margin-bottom: 20px;
+}
+
+.cell-ellipsis {
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Campos de formulario adicionales (select, file, fechas) */
+.form-group select,
+.form-group textarea {
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    outline: none;
+    font-size: 0.9rem;
+    background: #FFFFFF;
+    color: var(--text-dark);
+}
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        border-color: var(--primary-blue);
+    }
+
+.form-group input[type="file"] {
+    background: #F8FAFC;
+    cursor: pointer;
+}
+
+/* Acción eliminar por fila */
+.btn-action.delete {
+    background-color: var(--danger-bg);
+}
+
+/* Chips del selector con datalist */
+.chips-box {
+    min-height: 32px;
+    margin-bottom: 12px;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #EEF2FF;
+    color: var(--primary-blue);
+    border-radius: 16px;
+    padding: 4px 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin: 0 6px 6px 0;
+}
+
+    .chip button {
+        border: 0;
+        background: none;
+        cursor: pointer;
+        color: inherit;
+        font-weight: 700;
+    }
+
+/* Badges de estado */
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: #D1FAE5;
+    color: #047857;
+}
+
+.badge-warning {
+    background: #FEF3C7;
+    color: #B45309;
+}
+
+.badge-danger {
+    background: #FEE2E2;
+    color: #B91C1C;
+}
+
+/* Editor de preguntas (Nuevo Test) */
+.pregunta-card {
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.pregunta-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.opcion-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+    .opcion-row .op-texto {
+        flex: 1;
+        padding: 8px 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        outline: none;
+        font-size: 0.9rem;
+    }
+
+        .opcion-row .op-texto:focus {
+            border-color: var(--primary-blue);
+        }
+
+        .opcion-row .op-texto[readonly] {
+            background: #F8FAFC;
+            color: var(--text-muted);
+        }
+
+.btn-remove {
+    border: 0;
+    background: none;
+    cursor: pointer;
+    color: var(--danger-red);
+    font-weight: 700;
+    font-size: 1.1rem;
+}

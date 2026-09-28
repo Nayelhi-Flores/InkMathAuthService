@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="css/theme.css">
     <link rel="stylesheet" href="css/aulas.css">
     <script src="js/layout.js" defer></script>
-    <style>[hidden]{display:none!important}</style>
 </head>
 <body>
     <div class="app-layout">
@@ -48,7 +47,7 @@
 
                 <div class="card-container">
                     <div class="table-actions">
-                        <div style="display:flex;gap:12px;align-items:center;">
+                        <div class="table-filters">
                             <select id="filterTipo" class="page-select" style="padding:8px 12px;">
                                 <option value="">Todos los tipos</option>
                                 <option value="1">Documento</option>
@@ -126,7 +125,7 @@
                     <label for="recAulaInput">Asignar a aulas (opcional)</label>
                     <input type="text" id="recAulaInput" list="recAulaDatalist" autocomplete="off" placeholder="Escribe para filtrar y elige de la lista...">
                     <datalist id="recAulaDatalist"></datalist>
-                    <div id="recAulaChips" style="min-height:32px;margin-top:8px;"></div>
+                    <div id="recAulaChips" class="chips-box"></div>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-cancel" id="btnCancelarRecurso">Cancelar</button>
@@ -146,7 +145,7 @@
                 <input type="text" id="asignarInput" list="asignarDatalist" autocomplete="off" placeholder="Escribe para filtrar y elige de la lista...">
                 <datalist id="asignarDatalist"></datalist>
             </div>
-            <div id="asignarChips" style="min-height:32px;margin-bottom:12px;"></div>
+            <div id="asignarChips" class="chips-box"></div>
             <div class="modal-actions">
                 <button type="button" class="btn-cancel" id="btnCancelarAsignar">Cancelar</button>
                 <button type="button" class="btn-primary" id="btnConfirmarAsignar" disabled>Asignar</button>
