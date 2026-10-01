@@ -1,9 +1,16 @@
 ﻿document.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const isExpressVariant = urlParams.get('variante') === 'directa' || urlParams.get('variante') === 'express';
+    const ROL_DOCENTE = 2;
+    const ROL_ESTUDIANTE = 3;
+    const DEFAULT_CLASS = '';
 
+    // Compatibilidad: ?variante=express (o directa) abre directamente el modo exprés
+    const urlParams = new URLSearchParams(window.location.search);
+    const startsExpress = ['directa', 'express'].includes(urlParams.get('variante'));
+
+    // Estado
     let currentStep = 1;
     let selectedRolId = null;
+    let isExpress = false;
 
     // Elementos DOM
     const groupCodigoClase = document.getElementById('groupCodigoClase');
@@ -15,40 +22,27 @@
     const btnNext = document.getElementById('btnNext');
     const btnSubmit = document.getElementById('btnSubmit');
 
+    const expressOffer = document.getElementById('expressOffer');
+    const btnExpress = document.getElementById('btnExpress');
+
     const passwordInput = document.getElementById('passwordInput');
     const btnTogglePass = document.getElementById('btnTogglePass');
     const imgEyeIcon = document.getElementById('imgEyeIcon');
     const codigoClaseInput = document.getElementById('codigoClaseInput');
     const lblCodigoClase = document.getElementById('lblCodigoClase');
+    const codigoClaseError = document.getElementById('codigoClaseError');
 
     const PATH_EYE = 'icons/bx-eye.svg';
     const PATH_EYE_SLASH = 'icons/bx-eye-slash.svg';
 
-    // Ocultar campo de clase por defecto en flujo normal
-    if (!isExpressVariant && groupCodigoClase) {
-        groupCodigoClase.style.display = 'none';
-    }
-
-    // Ajustes para la variante Exprés
-    if (isExpressVariant) {
-        progressBarContainer.style.display = 'none';
-        selectedRolId = 3; // Estudiante
-        currentStep = 3; // Muestra directamente Nombre, Apellido y Código
-        codigoClaseInput.value = 'DEFAULT-CLASS'; // Código por defecto para exprés
-        lblCodigoClase.textContent = 'Código de Clase';
-        if (groupCodigoClase) groupCodigoClase.style.display = 'flex';
-        updateStepUI();
-        stepSubtitle.textContent = 'Registro exprés de estudiante';
-    }
-
-    // Toggle Contraseña
+    // ---------- Toggle contraseña ----------
     btnTogglePass.addEventListener('click', () => {
         const isPassword = passwordInput.getAttribute('type') === 'password';
         passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
         imgEyeIcon.setAttribute('src', isPassword ? PATH_EYE : PATH_EYE_SLASH);
     });
 
-    // Validación visual de requisitos de Contraseña
+    // ---------- Validación visual de requisitos de contraseña ----------
     passwordInput.addEventListener('input', () => {
         const val = passwordInput.value;
         toggleRule('ruleLength', val.length >= 8);
@@ -58,28 +52,45 @@
     });
 
     function toggleRule(elementId, isValid) {
-        const el = document.getElementById(elementId);
-        if (isValid) {
-            el.classList.add('valid');
-        } else {
-            el.classList.remove('valid');
-        }
+        document.getElementById(elementId).classList.toggle('valid', isValid);
     }
 
-    // Selección de Rol
+    // ---------- Selección de rol ----------
     window.selectRole = function (rolId, element) {
         selectedRolId = rolId;
         document.querySelectorAll('.role-card').forEach(card => card.classList.remove('selected'));
         element.classList.add('selected');
         document.getElementById('roleError').textContent = '';
 
-        // Ocultar o mostrar el campo según el rol seleccionado (3 = Estudiante)
-        if (groupCodigoClase) {
-            groupCodigoClase.style.display = (rolId === 3) ? 'flex' : 'none';
-        }
+        // La opción exprés solo existe para estudiantes
+        expressOffer.hidden = rolId !== ROL_ESTUDIANTE;
     };
 
-    // Navegación
+    // ---------- Modo exprés ----------
+    function enterExpress() {
+        isExpress = true;
+        selectedRolId = ROL_ESTUDIANTE;
+        currentStep = 3; // Nombre, Apellido y Código de clase
+        codigoClaseInput.value = codigoClaseInput.value.trim() || DEFAULT_CLASS;
+        lblCodigoClase.textContent = 'Código de Clase';
+        codigoClaseError.textContent = '';
+        updateStepUI();
+    }
+
+    function exitExpress() {
+        isExpress = false;
+        currentStep = 1; // vuelve a la selección de rol; el rol Estudiante sigue marcado
+        if (codigoClaseInput.value.trim() === DEFAULT_CLASS) {
+            codigoClaseInput.value = '';
+        }
+        lblCodigoClase.textContent = 'Código de Clase (Opcional)';
+        codigoClaseError.textContent = '';
+        updateStepUI();
+    }
+
+    btnExpress.addEventListener('click', enterExpress);
+
+    // ---------- Navegación ----------
     btnNext.addEventListener('click', () => {
         if (validateCurrentStep()) {
             currentStep++;
@@ -88,11 +99,15 @@
     });
 
     btnBack.addEventListener('click', () => {
-        currentStep--;
-        updateStepUI();
+        if (isExpress) {
+            exitExpress();
+        } else {
+            currentStep--;
+            updateStepUI();
+        }
     });
 
-    // Validaciones por Paso
+    // ---------- Validaciones por paso ----------
     function validateCurrentStep() {
         let isValid = true;
 
@@ -130,16 +145,20 @@
         return isValid;
     }
 
-    // Actualización de Vista por Paso
+    // ---------- Actualización de la vista ----------
     function updateStepUI() {
         document.querySelectorAll('.step-content').forEach(el => el.classList.remove('active'));
         document.getElementById(`step${currentStep}`).classList.add('active');
 
-        if (currentStep === 3 && !isExpressVariant && groupCodigoClase) {
-            groupCodigoClase.style.display = (selectedRolId === 3) ? 'flex' : 'none';
-        }
+        // El código de clase se muestra en exprés y, en el flujo normal, solo para estudiantes
+        groupCodigoClase.style.display = (isExpress || selectedRolId === ROL_ESTUDIANTE) ? 'flex' : 'none';
 
-        if (!isExpressVariant) {
+        // La barra de progreso no aplica en exprés
+        progressBarContainer.hidden = isExpress;
+
+        if (isExpress) {
+            stepSubtitle.textContent = 'Registro exprés de estudiante';
+        } else {
             const subtitles = {
                 1: 'Paso 1: Selecciona tu tipo de cuenta',
                 2: 'Paso 2: Ingresa tu correo y contraseña',
@@ -154,12 +173,14 @@
             document.getElementById('pStep3').classList.toggle('active', currentStep >= 3);
         }
 
-        btnBack.style.display = (currentStep === 1 || (isExpressVariant && currentStep === 3)) ? 'none' : 'block';
+        // En exprés, "Atrás" sirve para volver al registro normal
+        btnBack.textContent = isExpress ? 'Volver al registro normal' : 'Atrás';
+        btnBack.style.display = currentStep === 1 ? 'none' : 'block';
         btnNext.style.display = currentStep === 3 ? 'none' : 'block';
         btnSubmit.style.display = currentStep === 3 ? 'block' : 'none';
     }
 
-    // Envío del Formulario
+    // ---------- Envío del formulario ----------
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -170,6 +191,7 @@
 
         nombreError.textContent = '';
         apellidoError.textContent = '';
+        codigoClaseError.textContent = '';
 
         let isValid = true;
         if (!nombre) {
@@ -183,22 +205,22 @@
 
         if (!isValid) return;
 
-        const endpoint = isExpressVariant ? '/api/Auth/registro-express' : '/api/Auth/registro';
+        const endpoint = isExpress ? '/api/Auth/registro-express' : '/api/Auth/registro';
 
         // Petición multipart/form-data requerida por la API
         const formData = new FormData();
         formData.append('Nombre', nombre);
         formData.append('Apellido', apellido);
 
-        if (isExpressVariant) {
-            formData.append('CodigoClase', codigoClaseInput.value.trim() || 'DEFAULT-CLASS');
+        if (isExpress) {
+            formData.append('CodigoClase', codigoClaseInput.value.trim() || DEFAULT_CLASS);
         } else {
             formData.append('Email', document.getElementById('emailInput').value.trim());
             formData.append('Password', passwordInput.value.trim());
             formData.append('RoleId', selectedRolId);
             formData.append('AceptoTerminos', document.getElementById('termsCheck').checked);
 
-            if (selectedRolId === 3) {
+            if (selectedRolId === ROL_ESTUDIANTE) {
                 const codigo = codigoClaseInput.value.trim();
                 if (codigo) {
                     formData.append('CodigoClase', codigo);
@@ -215,7 +237,7 @@
             if (response.ok) {
                 const data = await response.json().catch(() => null);
 
-                if (isExpressVariant) {
+                if (isExpress) {
                     if (data && data.token) {
                         localStorage.setItem('token', data.token);
                     }
@@ -225,11 +247,20 @@
                 }
             } else {
                 const errorData = await response.json().catch(() => null);
-                document.getElementById('codigoClaseError').textContent = errorData?.mensaje || 'Error al procesar el registro.';
+                codigoClaseError.textContent = errorData?.mensaje || 'Error al procesar el registro.';
             }
         } catch (error) {
             console.error('Error de red:', error);
-            document.getElementById('codigoClaseError').textContent = 'Error de conexión con el servidor.';
+            codigoClaseError.textContent = 'Error de conexión con el servidor.';
         }
     });
+
+    // ---------- Estado inicial ----------
+    if (startsExpress) {
+        const studentCard = document.querySelector(`.role-card[data-rol="${ROL_ESTUDIANTE}"]`);
+        if (studentCard) window.selectRole(ROL_ESTUDIANTE, studentCard);
+        enterExpress();
+    } else {
+        updateStepUI();
+    }
 });

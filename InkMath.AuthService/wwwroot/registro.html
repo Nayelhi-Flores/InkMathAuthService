@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InkMath - Registro de Usuario</title>
     <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/auth.css">
     <link rel="stylesheet" href="css/registro.css">
 </head>
 <body>
@@ -17,7 +18,7 @@
                 <p class="brand-subtitle" id="stepSubtitle">Paso 1: Selecciona tu tipo de cuenta</p>
             </header>
 
-            <!-- Progress Bar (Se oculta en variante exprés) -->
+            <!-- Barra de progreso (se oculta en el registro exprés) -->
             <div class="progress-bar-container" id="progressBarContainer">
                 <div class="progress-step active" id="pStep1"><span>1</span> Rol</div>
                 <div class="progress-line" id="pLine1"></div>
@@ -31,7 +32,7 @@
                 <!-- PASO 1: Selección de Rol -->
                 <div class="step-content active" id="step1">
                     <div class="roles-grid">
-                        <div class="role-card" onclick="selectRole(3, this)">
+                        <div class="role-card" data-rol="3" onclick="selectRole(3, this)">
                             <div class="role-icon-wrapper">
                                 <img src="icons/bx-edit.svg" alt="Icono Estudiante" class="role-icon">
                             </div>
@@ -39,7 +40,7 @@
                             <p>Aprende matemática jugando y supera los retos diarios.</p>
                         </div>
 
-                        <div class="role-card" onclick="selectRole(2, this)">
+                        <div class="role-card" data-rol="2" onclick="selectRole(2, this)">
                             <div class="role-icon-wrapper">
                                 <img src="icons/bx-edit-alt.svg" alt="Icono Docente" class="role-icon">
                             </div>
@@ -48,6 +49,12 @@
                         </div>
                     </div>
                     <span class="error-text text-center" id="roleError"></span>
+
+                    <!-- Solo visible si se elige Estudiante -->
+                    <div class="express-offer" id="expressOffer" hidden>
+                        <p>¿Quieres empezar a jugar ya? Entra solo con tu nombre y el código de tu clase, sin correo ni contraseña.</p>
+                        <button type="button" class="btn-secondary btn-express" id="btnExpress">Registro exprés</button>
+                    </div>
                 </div>
 
                 <!-- PASO 2: Correo, Contraseña y Términos -->

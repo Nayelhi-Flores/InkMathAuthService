@@ -11,10 +11,11 @@
 using System;
 using System.Reflection;
 
+[assembly: Microsoft.Extensions.Configuration.UserSecrets.UserSecretsIdAttribute("4a015fd6-c591-425b-b482-ee7b812e2a3f")]
 [assembly: System.Reflection.AssemblyCompanyAttribute("InkMath.AuthService")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+de14d654c24fb0e482ca81b239d3328244ae1355")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+154cc1b4ae6cb84073a220cf2da31fa5ba4d404a")]
 [assembly: System.Reflection.AssemblyProductAttribute("InkMath.AuthService")]
 [assembly: System.Reflection.AssemblyTitleAttribute("InkMath.AuthService")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
