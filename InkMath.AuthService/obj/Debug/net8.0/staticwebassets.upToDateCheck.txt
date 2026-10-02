@@ -43,6 +43,9 @@ wwwroot\js\configuracion.js
 wwwroot\js\evaluaciones.js
 wwwroot\js\layout.js
 wwwroot\js\recursos.js
+wwwroot\js\registro.js
+wwwroot\recursos.html
+wwwroot\registro.html
 wwwroot\juego.apple-touch-icon.png
 wwwroot\juego.audio.position.worklet.js
 wwwroot\juego.audio.worklet.js
@@ -52,6 +55,3 @@ wwwroot\juego.js
 wwwroot\juego.pck
 wwwroot\juego.png
 wwwroot\juego.wasm
-wwwroot\recursos.html
-wwwroot\registro.html
-wwwroot\js\registro.js

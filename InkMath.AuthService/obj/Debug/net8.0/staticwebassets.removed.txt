@@ -1,2 +1,0 @@
-C:\Users\Kathe\source\repos\InkMath.AuthService\InkMath.AuthService\wwwroot\css\aulas.css
-C:\Users\Kathe\source\repos\InkMath.AuthService\InkMath.AuthService\wwwroot\css\login.css
