@@ -7,11 +7,8 @@
 });
 
 async function cargarDatosPerfil() {
-    const token = localStorage.getItem('token');
     try {
-        const response = await fetch('/api/Usuarios/me', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const response = await fetch('/api/Usuarios/me');
 
         if (response.ok) {
             const user = await response.json();
@@ -27,7 +24,6 @@ async function cargarDatosPerfil() {
 
 async function guardarPerfil(e) {
     e.preventDefault();
-    const token = localStorage.getItem('token');
     const nuevoNombre = document.getElementById('txtNombre').value;
     const nuevoApellido = document.getElementById('txtApellido').value;
 
@@ -36,7 +32,6 @@ async function guardarPerfil(e) {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({ nombre: nuevoNombre, apellido: nuevoApellido })
         });
@@ -57,13 +52,11 @@ async function guardarPerfil(e) {
 async function simularSuscripcion() {
     if (!confirm('¿Deseas activar una suscripción de prueba por 30 días?')) return;
 
-    const token = localStorage.getItem('token');
     try {
         const response = await fetch('/api/Usuarios/prueba-suscripcion', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({ planId: 1 }) // ID 1 representa el plan premium de demostración
         });
@@ -84,16 +77,12 @@ async function darseDeBaja() {
     const confirmacion = confirm('¿Estás seguro de que deseas darte de baja? Esta acción desactivará tu acceso a la plataforma.');
     if (!confirmacion) return;
 
-    const token = localStorage.getItem('token');
     try {
         const response = await fetch('/api/Usuarios/darse-de-baja', {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+            method: 'DELETE'});
 
         if (response.ok) {
             alert('Tu cuenta ha sido desactivada.');
-            localStorage.removeItem('token');
             window.location.href = 'index.html';
         } else {
             const err = await response.json();

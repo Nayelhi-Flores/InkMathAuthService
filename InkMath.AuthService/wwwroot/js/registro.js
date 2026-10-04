@@ -238,9 +238,6 @@
                 const data = await response.json().catch(() => null);
 
                 if (isExpress) {
-                    if (data && data.token) {
-                        localStorage.setItem('token', data.token);
-                    }
                     window.location.href = 'juego.html';
                 } else {
                     window.location.href = 'index.html';

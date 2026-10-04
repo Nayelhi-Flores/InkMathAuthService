@@ -1,6 +1,11 @@
-﻿using InkMath.AuthService.Data;
+﻿using System.Data;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using InkMath.AuthService.Data;
 using InkMath.AuthService.DTOs;
 using InkMath.AuthService.Models;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 
 namespace InkMath.AuthService.Services
@@ -8,164 +13,233 @@ namespace InkMath.AuthService.Services
     public interface IEvaluacionService
     {
         Task<ResultadoEvaluacionResponseDto> ProcesarIntentoTestAsync(RegistrarIntentoTestDto dto);
-        Task<EvaluacionDto?> ObtenerEvaluacionPorTestIdAsync(long testId, int limitePreguntas = 15);
+        Task<EvaluacionDto?> ObtenerEvaluacionPorTestIdAsync(long testId, long estudianteId, int limitePreguntas = 15);
+    }
+
+    /// <summary>Error de validación de negocio (se responde 400).</summary>
+    public class EvaluacionInvalidaException : Exception
+    {
+        public EvaluacionInvalidaException(string mensaje) : base(mensaje) { }
+    }
+
+    /// <summary>
+    /// Ticket firmado (HMAC-SHA256) que el servidor entrega al iniciar un test.
+    /// Fija qué preguntas se sirvieron, a quién y cuándo, sin necesidad de nuevas tablas.
+    /// </summary>
+    public sealed record IntentoTicketPayload(long TestId, long EstudianteId, long[] PreguntaIds, long EmitidoMs);
+
+    public static class IntentoTicket
+    {
+        public static readonly TimeSpan Vigencia = TimeSpan.FromMinutes(20);
+
+        public static string Emitir(byte[] key, IntentoTicketPayload payload)
+        {
+            var cuerpo = WebEncoders.Base64UrlEncode(JsonSerializer.SerializeToUtf8Bytes(payload));
+            var firma = WebEncoders.Base64UrlEncode(HMACSHA256.HashData(key, Encoding.ASCII.GetBytes(cuerpo)));
+            return $"{cuerpo}.{firma}";
+        }
+
+        public static IntentoTicketPayload? Validar(byte[] key, string? ticket)
+        {
+            if (string.IsNullOrWhiteSpace(ticket) || ticket.Length > 4096) return null;
+            var partes = ticket.Split('.');
+            if (partes.Length != 2) return null;
+
+            try
+            {
+                var esperada = HMACSHA256.HashData(key, Encoding.ASCII.GetBytes(partes[0]));
+                var recibida = WebEncoders.Base64UrlDecode(partes[1]);
+                if (!CryptographicOperations.FixedTimeEquals(esperada, recibida)) return null;
+
+                var p = JsonSerializer.Deserialize<IntentoTicketPayload>(WebEncoders.Base64UrlDecode(partes[0]));
+                if (p is null || p.PreguntaIds is null || p.PreguntaIds.Length == 0) return null;
+
+                var edad = DateTimeOffset.UtcNow - DateTimeOffset.FromUnixTimeMilliseconds(p.EmitidoMs);
+                if (edad < TimeSpan.Zero || edad > Vigencia) return null;
+                return p;
+            }
+            catch
+            {
+                return null; // base64 o JSON malformado
+            }
+        }
     }
 
     public class EvaluacionService : IEvaluacionService
     {
-        private readonly AplicationDbContext _context;
+        private const int MaxPreguntasPorIntento = 30;
+        private const int MaxRespuestasAceptadas = 100;
+        private const int MaxLongitudRespuestaTexto = 500;
+        private const double MinSegundosPorPregunta = 1.0;
 
-        public EvaluacionService(AplicationDbContext context)
+        private readonly AplicationDbContext _context;
+        private readonly byte[] _ticketKey;
+
+        public EvaluacionService(AplicationDbContext context, IConfiguration config)
         {
             _context = context;
+
+            var jwtKey = config["Jwt:Key"];
+            if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey.Length < 32)
+                throw new InvalidOperationException("Jwt:Key debe configurarse (mínimo 32 caracteres).");
+
+            // Clave derivada: no reutiliza directamente la clave de firma del JWT.
+            _ticketKey = HMACSHA256.HashData(Encoding.UTF8.GetBytes(jwtKey), "inkmath-intento-v1"u8);
         }
 
         public async Task<ResultadoEvaluacionResponseDto> ProcesarIntentoTestAsync(RegistrarIntentoTestDto dto)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            // 0. El intento debe provenir de un ticket emitido por el servidor para ESTE alumno y ESTE test.
+            var ticket = IntentoTicket.Validar(_ticketKey, dto.IntentoToken);
+            if (ticket is null || ticket.TestId != dto.TestId || ticket.EstudianteId != dto.EstudianteId)
+                throw new EvaluacionInvalidaException("Intento inválido o expirado. Vuelve a iniciar el nivel.");
+
+            // Tiempos definidos por el servidor (se ignoran FechaInicio/FechaFin del cliente).
+            var inicio = DateTimeOffset.FromUnixTimeMilliseconds(ticket.EmitidoMs);
+            var fin = DateTimeOffset.UtcNow;
+            if ((fin - inicio).TotalSeconds < ticket.PreguntaIds.Length * MinSegundosPorPregunta)
+                throw new EvaluacionInvalidaException("El intento se envió demasiado rápido.");
+
+            await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
 
             try
             {
-                // 1. Obtener las preguntas del test
-                var preguntasTest = await _context.PreguntasTest
-                    .Where(p => p.TestId == dto.TestId)
+                // 1. Anti-replay: un ticket solo se puede canjear una vez (FechaInicio = momento de emisión).
+                bool yaCanjeado = await _context.IntentosTest.AnyAsync(i =>
+                    i.TestId == dto.TestId && i.EstudianteId == dto.EstudianteId && i.FechaInicio == inicio);
+                if (yaCanjeado)
+                    throw new EvaluacionInvalidaException("Este intento ya fue registrado.");
+
+                // 2. Solo cuentan las preguntas que se sirvieron en el ticket.
+                var idsServidos = ticket.PreguntaIds;
+                var preguntas = await _context.PreguntasTest
+                    .Where(p => p.TestId == dto.TestId && idsServidos.Contains(p.Id))
                     .Include(p => p.Opciones)
                     .ToListAsync();
 
-                int totalPreguntas = preguntasTest.Count;
-                int aciertos = 0;
+                int totalPreguntas = preguntas.Count;
+                if (totalPreguntas == 0)
+                    throw new EvaluacionInvalidaException("El test no tiene preguntas válidas.");
 
-                // 2. Evaluar respuestas
-                foreach (var resp in dto.Respuestas)
+                // 3. Una respuesta por pregunta (se descartan duplicados y preguntas ajenas al ticket).
+                var respuestasPorPregunta = (dto.Respuestas ?? new())
+                    .Take(MaxRespuestasAceptadas)
+                    .GroupBy(r => r.PreguntaId)
+                    .Select(g => g.First())
+                    .ToDictionary(r => r.PreguntaId);
+
+                int aciertos = 0;
+                var filasRespuesta = new List<RespuestaEstudiante>(totalPreguntas);
+
+                foreach (var pregunta in preguntas)
                 {
-                    var pregunta = preguntasTest.FirstOrDefault(p => p.Id == resp.PreguntaId);
-                    if (pregunta != null && resp.OpcionId.HasValue)
+                    respuestasPorPregunta.TryGetValue(pregunta.Id, out var resp);
+
+                    long? opcionIdValida = null;
+                    if (resp?.OpcionId is > 0)
                     {
-                        var opcionCorrecta = pregunta.Opciones.FirstOrDefault(o => o.EsCorrecta);
-                        if (opcionCorrecta != null && opcionCorrecta.Id == resp.OpcionId.Value)
+                        // La opción debe pertenecer a la pregunta; si no, se trata como sin responder.
+                        var opcion = pregunta.Opciones.FirstOrDefault(o => o.Id == resp.OpcionId.Value);
+                        if (opcion != null)
                         {
-                            aciertos++;
+                            opcionIdValida = opcion.Id;
+                            if (opcion.EsCorrecta) aciertos++;
                         }
                     }
+
+                    var texto = resp?.RespuestaTexto ?? string.Empty;
+                    if (texto.Length > MaxLongitudRespuestaTexto) texto = texto[..MaxLongitudRespuestaTexto];
+
+                    filasRespuesta.Add(new RespuestaEstudiante
+                    {
+                        PreguntaId = pregunta.Id,
+                        OpcionId = opcionIdValida,
+                        RespuestaTexto = texto
+                    });
                 }
 
-                // 3. Calcular puntaje (0-100)
-                int puntajeFinal = totalPreguntas > 0 ? (int)Math.Round((double)aciertos / totalPreguntas * 100) : 0;
+                // 4. Puntaje (0-100) sobre las preguntas realmente servidas.
+                int puntajeFinal = (int)Math.Round((double)aciertos / totalPreguntas * 100);
 
-                // 4. Buscar récord anterior del estudiante en este test
+                // 5. Récord anterior
                 int mejorPuntajePrevio = await _context.IntentosTest
                     .Where(i => i.TestId == dto.TestId && i.EstudianteId == dto.EstudianteId)
                     .OrderByDescending(i => i.PuntajeObtenido)
                     .Select(i => (int?)i.PuntajeObtenido)
                     .FirstOrDefaultAsync() ?? 0;
 
-                // 5. Guardar el nuevo intento siempre (permite historial de intentos)
+                // 6. Guardar intento y respuestas
                 var nuevoIntento = new IntentoTest
                 {
                     TestId = dto.TestId,
                     EstudianteId = dto.EstudianteId,
                     PuntajeObtenido = puntajeFinal,
-                    FechaInicio = dto.FechaInicio,
-                    FechaFin = dto.FechaFin
+                    FechaInicio = inicio,
+                    FechaFin = fin
                 };
-
                 _context.IntentosTest.Add(nuevoIntento);
                 await _context.SaveChangesAsync();
 
-                // Guardar respuestas
-                foreach (var resp in dto.Respuestas)
-                {
-                    long? opcionIdValida = resp.OpcionId > 0 ? resp.OpcionId : null;
-
-                    _context.RespuestasEstudiante.Add(new RespuestaEstudiante
-                    {
-                        IntentoId = nuevoIntento.Id,
-                        PreguntaId = resp.PreguntaId,
-                        OpcionId = opcionIdValida,
-                        RespuestaTexto = resp.RespuestaTexto
-                    });
-                }
+                foreach (var fila in filasRespuesta) fila.IntentoId = nuevoIntento.Id;
+                _context.RespuestasEstudiante.AddRange(filasRespuesta);
                 await _context.SaveChangesAsync();
 
-                // Actualizar progreso de nivel
-                // Verificar si este Test está vinculado a un Nivel de juego
-                var nivelAsociado = await _context.Niveles
-                    .FirstOrDefaultAsync(n => n.TestId == dto.TestId);
-
+                // 7. Progreso de nivel
+                var nivelAsociado = await _context.Niveles.FirstOrDefaultAsync(n => n.TestId == dto.TestId);
                 if (nivelAsociado != null)
                 {
                     var progreso = await _context.ProgresosNivel
                         .FirstOrDefaultAsync(p => p.NivelId == nivelAsociado.Id && p.EstudianteId == dto.EstudianteId);
 
-                    // Determinar estado de progreso:
-                    // ID 3 = Completado (100% correctas)
-                    // ID 2 = En Progreso (ya respondió el test pero no todas son correctas)
-                    long nuevoEstadoId = (aciertos == totalPreguntas && totalPreguntas > 0) ? 3 : 2;
+                    // 3 = Completado (100%), 2 = En Progreso
+                    long nuevoEstadoId = aciertos == totalPreguntas ? 3 : 2;
 
                     if (progreso == null)
                     {
-                        // Si no existía registro previo
-                        progreso = new ProgresoNivel
+                        _context.ProgresosNivel.Add(new ProgresoNivel
                         {
                             EstudianteId = dto.EstudianteId,
                             NivelId = nivelAsociado.Id,
                             EstadoId = nuevoEstadoId,
                             Puntaje = puntajeFinal,
                             Intentos = 1
-                        };
-                        _context.ProgresosNivel.Add(progreso);
+                        });
                     }
                     else
                     {
-                        // Si ya existía, incrementar intentos y actualizar puntaje máximo alcanzado
                         progreso.Intentos += 1;
-
-                        if (puntajeFinal > progreso.Puntaje)
-                        {
-                            progreso.Puntaje = puntajeFinal;
-                        }
-
-                        // Si ya estaba completado (3), mantenemos 3. De lo contrario se asigna el nuevo estado
-                        if (progreso.EstadoId != 3)
-                        {
-                            progreso.EstadoId = nuevoEstadoId;
-                        }
+                        if (puntajeFinal > progreso.Puntaje) progreso.Puntaje = puntajeFinal;
+                        if (progreso.EstadoId != 3) progreso.EstadoId = nuevoEstadoId;
                     }
-
                     await _context.SaveChangesAsync();
                 }
 
-                // 6. Calcular recompensas sólo si superó su récord anterior
+                // 8. Recompensa solo si supera su récord anterior
                 long monedasGanadas = 0;
-                long nuevoSaldo = 0;
-
                 if (puntajeFinal > mejorPuntajePrevio)
                 {
                     int incrementoAciertos = aciertos - (int)Math.Round((double)mejorPuntajePrevio / 100 * totalPreguntas);
                     if (incrementoAciertos > 0)
                     {
-                        monedasGanadas = incrementoAciertos * 10;
+                        monedasGanadas = incrementoAciertos * 10L;
                         if (puntajeFinal >= 80 && mejorPuntajePrevio < 80)
-                        {
-                            monedasGanadas += 50; // Bonificación por alcanzar el umbral de excelencia
-                        }
+                            monedasGanadas += 50;
                     }
                 }
 
-                // 7. Acreditar monedas si corresponden
+                // 9. Acreditar
+                var saldoEntity = await _context.SaldoMonedas.FirstOrDefaultAsync(s => s.EstudianteId == dto.EstudianteId);
                 if (monedasGanadas > 0)
                 {
-                    var transaccionMoneda = new TransaccionMoneda
+                    _context.TransaccionesMonedas.Add(new TransaccionMoneda
                     {
                         EstudianteId = dto.EstudianteId,
                         TipoTransaccionId = 1,
                         Monto = monedasGanadas,
                         IdempotencyKey = $"TEST_{dto.TestId}_EST_{dto.EstudianteId}_SCORE_{puntajeFinal}",
                         CreadoEn = DateTimeOffset.UtcNow
-                    };
-                    _context.TransaccionesMonedas.Add(transaccionMoneda);
+                    });
 
-                    var saldoEntity = await _context.SaldoMonedas.FirstOrDefaultAsync(s => s.EstudianteId == dto.EstudianteId);
                     if (saldoEntity == null)
                     {
                         saldoEntity = new SaldoMoneda
@@ -181,14 +255,7 @@ namespace InkMath.AuthService.Services
                         saldoEntity.Saldo += monedasGanadas;
                         saldoEntity.ActualizadoEn = DateTimeOffset.UtcNow;
                     }
-
                     await _context.SaveChangesAsync();
-                    nuevoSaldo = saldoEntity.Saldo;
-                }
-                else
-                {
-                    var saldoExistente = await _context.SaldoMonedas.FirstOrDefaultAsync(s => s.EstudianteId == dto.EstudianteId);
-                    nuevoSaldo = saldoExistente?.Saldo ?? 0;
                 }
 
                 await transaction.CommitAsync();
@@ -200,26 +267,27 @@ namespace InkMath.AuthService.Services
                     RespuestasCorrectas = aciertos,
                     PuntajeObtenido = puntajeFinal,
                     MonedasGanadas = monedasGanadas,
-                    NuevoSaldoMonedas = nuevoSaldo
+                    NuevoSaldoMonedas = saldoEntity?.Saldo ?? 0
                 };
             }
-            catch (Exception)
+            catch
             {
                 await transaction.RollbackAsync();
                 throw;
             }
         }
 
-        public async Task<EvaluacionDto?> ObtenerEvaluacionPorTestIdAsync(long testId, int limitePreguntas = 15)
+        public async Task<EvaluacionDto?> ObtenerEvaluacionPorTestIdAsync(long testId, long estudianteId, int limitePreguntas = 15)
         {
+            limitePreguntas = Math.Clamp(limitePreguntas, 1, MaxPreguntasPorIntento);
+
             var test = await _context.TestsPersonalizados
                 .FirstOrDefaultAsync(t => t.Id == testId && t.EstaActivo);
-
             if (test == null) return null;
 
             var preguntas = await _context.PreguntasTest
                 .Where(p => p.TestId == testId)
-                .OrderBy(p => EF.Functions.Random()) // Selección aleatoria en PostgreSQL
+                .OrderBy(p => EF.Functions.Random())
                 .Take(limitePreguntas)
                 .Select(p => new PreguntaDetalleDto
                 {
@@ -232,18 +300,25 @@ namespace InkMath.AuthService.Services
                         {
                             OpcionId = o.Id,
                             TextoOpcion = o.TextoOpcion
-                            // Se omite EsCorrecta por seguridad frente a inspección en el cliente
+                            // EsCorrecta nunca se expone al cliente
                         })
                         .ToList()
                 })
                 .ToListAsync();
+
+            var ticket = IntentoTicket.Emitir(_ticketKey, new IntentoTicketPayload(
+                testId,
+                estudianteId,
+                preguntas.Select(p => p.PreguntaId).ToArray(),
+                DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()));
 
             return new EvaluacionDto
             {
                 TestId = test.Id,
                 NombreTest = test.Nombre,
                 TotalPreguntas = preguntas.Count,
-                Preguntas = preguntas
+                Preguntas = preguntas,
+                IntentoToken = ticket
             };
         }
     }

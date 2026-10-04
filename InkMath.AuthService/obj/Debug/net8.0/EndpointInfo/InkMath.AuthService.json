@@ -531,16 +531,6 @@
               "schema": {
                 "$ref": "#/components/schemas/RegistrarIntentoTestDto"
               }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegistrarIntentoTestDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegistrarIntentoTestDto"
-              }
             }
           }
         },
@@ -583,21 +573,22 @@
         }
       }
     },
-    "/api/Niveles/estudiante/{estudianteId}": {
+    "/api/Monedas/mi-saldo": {
+      "get": {
+        "tags": [
+          "Monedas"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Niveles/mi-mapa": {
       "get": {
         "tags": [
           "Niveles"
-        ],
-        "parameters": [
-          {
-            "name": "estudianteId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
         ],
         "responses": {
           "200": {
@@ -1135,9 +1126,9 @@
             "type": "integer",
             "format": "int64"
           },
-          "estudianteId": {
-            "type": "integer",
-            "format": "int64"
+          "intentoToken": {
+            "type": "string",
+            "nullable": true
           },
           "fechaInicio": {
             "type": "string",

@@ -53,7 +53,7 @@ namespace InkMath.AuthService.Controllers
         }
 
         [HttpGet("mis-aulas")]
-        [Authorize(Roles = "1,2")]
+        [Authorize(Roles = "2,3")]
         public async Task<IActionResult> ObtenerMisAulas()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value

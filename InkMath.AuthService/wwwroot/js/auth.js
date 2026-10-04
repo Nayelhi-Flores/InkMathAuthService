@@ -48,29 +48,14 @@
         try {
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
             });
 
             if (response.ok) {
                 const data = await response.json();
-
-                if (data.token) {
-                    localStorage.setItem('token', data.token);
-                    localStorage.setItem('usuario_id', data.usuarioId);
-                }
-
-                let rolId = data.rolId || data.idRol;
-
-                if (!rolId && data.token) {
-                    try {
-                        const payloadBase64 = data.token.split('.')[1];
-                        const decodedPayload = JSON.parse(atob(payloadBase64));
-                        rolId = parseInt(decodedPayload.rolId || decodedPayload.idRol || decodedPayload.role || decodedPayload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]);
-                    } catch (e) {
-                        console.error('Error al decodificar el token:', e);
-                    }
-                }
+                const rolId = Number(data.rolId);
 
                 if (rolId === 2) {
                     window.location.href = 'aulas.html';

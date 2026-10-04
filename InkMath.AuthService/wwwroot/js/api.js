@@ -1,22 +1,14 @@
 ﻿async function fetchConAuth(url, options = {}) {
-    const token = localStorage.getItem('token');
-
-    const headers = {
-        'Content-Type': 'application/json',
-        ...(options.headers || {}),
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-    };
-
-    const response = await fetch(url, { ...options, headers });
-
-    // Si el token expiró o no es válido (HTTP 401), redirigir al login
+    const esForm = options.body instanceof FormData;
+    const response = await fetch(url, {
+        credentials: 'same-origin',
+        ...options,
+        headers: { ...(esForm ? {} : { 'Content-Type': 'application/json' }), ...(options.headers || {}) }
+    });
     if (response.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('usuario_id');
         window.location.href = '/index.html';
         throw new Error('Sesión no autorizada o expirada.');
     }
-
     return response;
 }
 

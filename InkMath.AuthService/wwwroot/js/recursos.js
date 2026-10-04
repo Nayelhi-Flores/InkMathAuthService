@@ -10,13 +10,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const fmt = d => new Date(d).toLocaleDateString('es-GT');
 
     async function api(url, options = {}) {
-        const token = localStorage.getItem('token');
         const json = options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' };
         const res = await fetch(url, {
+            credentials: 'same-origin',
             ...options,
-            headers: { ...json, Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(options.headers || {}) }
+            headers: { ...json, Accept: 'application/json', ...(options.headers || {}) }
         });
-        if (res.status === 401) { localStorage.removeItem('token'); window.location.href = 'index.html'; throw new Error('401'); }
+        if (res.status === 401) { window.location.href = 'index.html'; throw new Error('401'); }
         return res;
     }
     const mensajeDe = async (res, def) => (await res.json().catch(() => null))?.mensaje || def;

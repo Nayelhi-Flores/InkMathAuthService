@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Azure;
 using InkMath.AuthService.DTOs;
 using InkMath.AuthService.Services;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Security.Cryptography;
 
 namespace InkMath.AuthService.Controllers
 {
@@ -36,8 +38,8 @@ namespace InkMath.AuthService.Controllers
         {
             // Generar correo único basado en el nombre y un aleatorio corto
             string idUnico = Guid.NewGuid().ToString().Substring(0, 4);
-            string emailTemp = $"{dto.Nombre.ToLower().Replace(" ", "")}.{idUnico}@inkmath.test";
-            string passwordTemp = "AlumnoPrueba2026!";
+            string emailTemp = $"alumno.{Guid.NewGuid():N}@inkmath.test";
+            string passwordTemp = Convert.ToBase64String(RandomNumberGenerator.GetBytes(24)) + "aA1!";
 
             var registroDto = new RegistroDto
             {
@@ -83,22 +85,15 @@ namespace InkMath.AuthService.Controllers
             // Generar JWT Token y Cookie de Sesión
             var token = _tokenService.GenerarToken(usuario);
 
-            Response.Cookies.Append("jwt_session", token, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddHours(8)
-            });
+            EstablecerCookieSesion(token);
 
             // Retornar payload completo
             return Ok(new
             {
                 mensaje = "Registro e inicio de sesión express exitoso",
                 usuarioId = usuario.Id,
-                nombre = $"{usuario.Nombre} {usuario.Apellido}".Trim(),
-                email = emailTemp,
-                token,
+                nombre = usuario.Nombre,
+                rolId = usuario.RoleId,
                 saldoMonedas = saldoActual,
                 esPrimerLogin
             });
@@ -116,22 +111,40 @@ namespace InkMath.AuthService.Controllers
 
             var token = _tokenService.GenerarToken(usuario);
 
-            Response.Cookies.Append("jwt_session", token, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddHours(8)
-            });
+            EstablecerCookieSesion(token);
 
-            return Ok(new { mensaje, usuarioId = usuario.Id, nombre = usuario.Nombre, token, saldoMonedas = saldoActual, esPrimerLogin
+            return Ok(new
+            {
+                mensaje,
+                usuarioId = usuario.Id,
+                nombre = usuario.Nombre,
+                rolId = usuario.RoleId,
+                saldoMonedas = saldoActual,
+                esPrimerLogin
             });
         }
+
+        private void EstablecerCookieSesion(string token) =>
+        Response.Cookies.Append("jwt_session", token, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Path = "/",
+            IsEssential = true,
+            Expires = DateTimeOffset.UtcNow.AddHours(8)
+        });
 
         [HttpPost("logout")]
         public IActionResult Logout()
         {
-            Response.Cookies.Delete("jwt_session");
+            Response.Cookies.Delete("jwt_session", new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Path = "/"
+            });
             return Ok(new { mensaje = "Sesión cerrada correctamente." });
         }
     }

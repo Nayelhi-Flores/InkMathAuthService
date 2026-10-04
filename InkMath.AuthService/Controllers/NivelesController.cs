@@ -1,10 +1,13 @@
 ﻿using InkMath.AuthService.DTOs;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Mvc;
 using InkMath.AuthService.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "3")]
 public class NivelesController : ControllerBase
 {
     private readonly INivelService _nivelService;
@@ -14,10 +17,11 @@ public class NivelesController : ControllerBase
         _nivelService = nivelService;
     }
 
-    [HttpGet("estudiante/{estudianteId}")]
-    public async Task<IActionResult> ObtenerMapaNiveles(long estudianteId)
+    [HttpGet("mi-mapa")]
+    public async Task<IActionResult> MiMapa()
     {
-        var mapa = await _nivelService.ObtenerMapaNivelesPorEstudianteAsync(estudianteId);
-        return Ok(mapa);
+        if (!long.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id))
+            return Unauthorized();
+        return Ok(await _nivelService.ObtenerMapaNivelesPorEstudianteAsync(id));
     }
 }

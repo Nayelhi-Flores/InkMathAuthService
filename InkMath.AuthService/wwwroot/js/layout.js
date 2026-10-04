@@ -10,6 +10,7 @@ const NAV_ITEMS = [
     { href: 'evaluaciones.html', icon: 'icons/bx-rocket.svg', label: 'Evaluaciones', fg: '#6F4FB8', bg: '#E4DCF7' },
     { href: 'recursos.html', icon: 'icons/bx-folder.svg', label: 'Recursos', fg: '#1A9BAB', bg: '#D2F1F4' },
     { href: 'configuracion.html', icon: 'icons/bx-cog.svg', label: 'Configuración', fg: '#D98A1F', bg: '#FDECC8' },
+    { href: 'index.html', icon: 'icons/bx-power.svg', label: 'Salir', fg: '#D98A1F', bg: '#FDECC8' }
 ];
 
 function initLayout() {
@@ -107,16 +108,8 @@ function initBottomNav(currentPage) {
 }
 
 async function cargarPerfilTopbar() {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        window.location.href = 'index.html';
-        return;
-    }
-
     try {
-        const response = await fetch('/api/Usuarios/me', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const response = await fetch('/api/Usuarios/me');
 
         if (response.status === 401) {
             cerrarSesion();
@@ -143,23 +136,10 @@ async function cargarPerfilTopbar() {
 
 // ---------- Cerrar sesión llamando al endpoint ----------
 async function cerrarSesion() {
-    const token = localStorage.getItem('token');
-
-    if (token) {
-        try {
-            await fetch('/api/Auth/logout', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-        } catch (err) {
-            console.error('Error al notificar cierre de sesión al servidor:', err);
-        }
+    try {
+        await fetch('/api/Auth/logout', { method: 'POST' });
+    } catch (err) {
+        console.error('Error al cerrar sesión:', err);
     }
-
-    // Limpieza local y redirección
-    localStorage.removeItem('token');
     window.location.href = 'index.html';
 }

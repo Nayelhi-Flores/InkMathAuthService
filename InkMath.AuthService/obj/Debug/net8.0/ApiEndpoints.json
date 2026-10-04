@@ -349,19 +349,23 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "NivelesController",
-    "Method": "ObtenerMapaNiveles",
-    "RelativePath": "api/Niveles/estudiante/{estudianteId}",
+    "ContainingType": "InkMath.AuthService.Controllers.MonedasController",
+    "Method": "MiSaldo",
+    "RelativePath": "api/Monedas/mi-saldo",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [
-      {
-        "Name": "estudianteId",
-        "Type": "System.Int64",
-        "IsRequired": true
-      }
-    ],
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "NivelesController",
+    "Method": "MiMapa",
+    "RelativePath": "api/Niveles/mi-mapa",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {

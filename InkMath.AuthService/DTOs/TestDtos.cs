@@ -46,7 +46,9 @@
     public class RegistrarIntentoTestDto
     {
         public long TestId { get; set; }
+        [System.Text.Json.Serialization.JsonIgnore]
         public long EstudianteId { get; set; }
+        public string IntentoToken { get; set; } = string.Empty;
         public DateTimeOffset FechaInicio { get; set; }
         public DateTimeOffset FechaFin { get; set; } = DateTimeOffset.UtcNow;
         public List<RegistrarRespuestaDto> Respuestas { get; set; } = new();

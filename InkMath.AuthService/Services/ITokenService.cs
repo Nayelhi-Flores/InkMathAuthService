@@ -18,6 +18,9 @@ namespace InkMath.AuthService.Services
         public TokenService(IConfiguration config)
         {
             _config = config;
+            var key = _config["Jwt:Key"];
+            if (string.IsNullOrWhiteSpace(key) || key.Length < 32)
+                throw new InvalidOperationException("Jwt:Key debe configurarse (mínimo 32 caracteres).");
         }
 
         public string GenerarToken(Usuario usuario)
@@ -30,16 +33,13 @@ namespace InkMath.AuthService.Services
                 new Claim(ClaimTypes.Role, usuario.RoleId.ToString())
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? "ClaveUltraSecretaDePrueba1234567890!"));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
             var token = new JwtSecurityToken(
-                issuer: _config["Jwt:Issuer"] ?? "InkMathAPI",
-                audience: _config["Jwt:Audience"] ?? "InkMathClient",
+                issuer: _config["Jwt:Issuer"],
+                audience: _config["Jwt:Audience"],
                 claims: claims,
                 expires: DateTime.UtcNow.AddHours(8),
-                signingCredentials: creds
-            );
+                signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256));
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }

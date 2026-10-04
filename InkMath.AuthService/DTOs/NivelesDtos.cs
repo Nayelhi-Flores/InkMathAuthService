@@ -57,6 +57,7 @@
         public string NombreTest { get; set; } = string.Empty;
         public int TotalPreguntas { get; set; }
         public List<PreguntaDetalleDto> Preguntas { get; set; } = new();
+        public string IntentoToken { get; set; } = string.Empty;
     }
 
     public class PreguntaDetalleDto

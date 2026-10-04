@@ -1,6 +1,7 @@
 using InkMath.AuthService.Data;
 using InkMath.AuthService.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
@@ -10,21 +11,16 @@ using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Selector de Base de Datos Dinámico (PostgreSQL vs SQL Server)
+// 1. Base de datos
 var dbProvider = builder.Configuration["DatabaseProvider"] ?? "SqlServer";
-
 if (dbProvider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase))
-{
-    builder.Services.AddDbContext<AplicationDbContext>(options =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("PostgresConnection")));
-}
+    builder.Services.AddDbContext<AplicationDbContext>(o =>
+        o.UseNpgsql(builder.Configuration.GetConnectionString("PostgresConnection")));
 else
-{
-    builder.Services.AddDbContext<AplicationDbContext>(options =>
-        options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServerConnection")));
-}
+    builder.Services.AddDbContext<AplicationDbContext>(o =>
+        o.UseSqlServer(builder.Configuration.GetConnectionString("SqlServerConnection")));
 
-// 2. Inyección de Servicios del Dominio
+// 2. Servicios
 builder.Services.AddSingleton<IAuditoriaService, AuditoriaService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
@@ -35,24 +31,23 @@ builder.Services.AddScoped<ITestService, TestService>();
 builder.Services.AddScoped<IEvaluacionService, EvaluacionService>();
 builder.Services.AddScoped<INivelService, NivelService>();
 
-// Configuracion de CORS (Permite peticiones desde la Web y Godot Engine)
-builder.Services.AddCors(options =>
+// Detrás de proxy (nginx/Cloudflare): IP real y esquema https
+builder.Services.Configure<ForwardedHeadersOptions>(o =>
 {
-    options.AddPolicy("AllowAll", policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
-    });
+    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    o.KnownNetworks.Clear();   // el contenedor solo debe ser alcanzable vía el proxy
+    o.KnownProxies.Clear();
 });
 
-// Configurar MIME types para archivos de Godot 4 Web
 var provider = new FileExtensionContentTypeProvider();
 provider.Mappings[".pck"] = "application/octet-stream";
 provider.Mappings[".wasm"] = "application/wasm";
 
-// 3. Autenticación JWT (Soporta Header Authorization y Cookies HttpOnly)
-var jwtKey = builder.Configuration["Jwt:Key"] ?? "ClaveUltraSecretaDePrueba1234567890!";
+// 3. JWT: clave obligatoria, sin valores por defecto
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey.Length < 32)
+    throw new InvalidOperationException("Jwt:Key debe configurarse (mínimo 32 caracteres).");
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -62,83 +57,82 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "InkMathAPI",
-            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "InkMathClient",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ValidAlgorithms = new[] { SecurityAlgorithms.HmacSha256 },
+            ClockSkew = TimeSpan.FromMinutes(1)
         };
-
         options.Events = new JwtBearerEvents
         {
-            OnMessageReceived = context =>
+            OnMessageReceived = ctx =>
             {
-                if (context.Request.Cookies.ContainsKey("jwt_session"))
-                {
-                    context.Token = context.Request.Cookies["jwt_session"];
-                }
+                if (!ctx.Request.Headers.ContainsKey("Authorization") &&
+                    ctx.Request.Cookies.TryGetValue("jwt_session", out var c))
+                    ctx.Token = c;
                 return Task.CompletedTask;
             }
         };
     });
+builder.Services.AddAuthorization();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
 
-// 4. Rate Limiter
+// 4. Rate limiting por IP (antes era global: 5 logins/min entre TODOS los usuarios)
+static RateLimitPartition<string> PorIp(HttpContext ctx, int limite) =>
+    RateLimitPartition.GetFixedWindowLimiter(
+        ctx.Connection.RemoteIpAddress?.ToString() ?? "desconocida",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = limite,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0
+        });
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
     options.OnRejected = async (context, token) =>
     {
         context.HttpContext.Response.ContentType = "application/json";
         await context.HttpContext.Response.WriteAsJsonAsync(new
         {
-            mensaje = "Demasiados intentos fallidos. Por favor, espera un minuto e intenta de nuevo."
+            mensaje = "Demasiados intentos. Espera un minuto e intenta de nuevo."
         }, cancellationToken: token);
     };
-
-    // 5 intentos para el Login
-    options.AddFixedWindowLimiter(policyName: "LoginLimiter", limiterOptions =>
-    {
-        limiterOptions.PermitLimit = 5;
-        limiterOptions.Window = TimeSpan.FromMinutes(1);
-        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        limiterOptions.QueueLimit = 0;
-    });
-
-    // 3 intentos para el Registro por cliente
-    options.AddFixedWindowLimiter(policyName: "RegisterLimiter", limiterOptions =>
-    {
-        limiterOptions.PermitLimit = 3;
-        limiterOptions.Window = TimeSpan.FromMinutes(1);
-        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        limiterOptions.QueueLimit = 0;
-    });
+    options.AddPolicy("LoginLimiter", ctx => PorIp(ctx, 5));
+    options.AddPolicy("RegisterLimiter", ctx => PorIp(ctx, 3));
 });
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();   // siempre primero
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-// 5. Middleware de Archivos Estáticos y Enrutamiento Web
-app.Use(async (context, next) =>
+else
 {
-    context.Response.Headers.Append("Cross-Origin-Opener-Policy", "same-origin");
-    context.Response.Headers.Append("Cross-Origin-Embedder-Policy", "require-corp");
+    app.UseHsts();
+}
+
+// Cabeceras de seguridad (el export de Godot es single-thread: no se necesita COOP/COEP)
+app.Use(async (ctx, next) =>
+{
+    var h = ctx.Response.Headers;
+    h["X-Content-Type-Options"] = "nosniff";
+    h["X-Frame-Options"] = "DENY";
+    h["Referrer-Policy"] = "strict-origin-when-cross-origin";
     await next();
 });
-app.UseDefaultFiles(); // Redirige a index.html automáticamente en la raíz "/"
-app.UseStaticFiles(new StaticFileOptions
-{
-    ContentTypeProvider = provider
-});
-app.UseCors("AllowAll");
+
+app.UseDefaultFiles();
+app.UseStaticFiles(new StaticFileOptions { ContentTypeProvider = provider });
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -149,13 +143,7 @@ app.MapHealthChecks("/api/health", new Microsoft.AspNetCore.Diagnostics.HealthCh
     ResponseWriter = async (context, report) =>
     {
         context.Response.ContentType = "application/json";
-        var response = new
-        {
-            status = report.Status.ToString(),
-            timestamp = DateTime.UtcNow,
-            service = "InkMath Auth Service API"
-        };
-        await context.Response.WriteAsJsonAsync(response);
+        await context.Response.WriteAsJsonAsync(new { status = report.Status.ToString() });
     }
 });
 
