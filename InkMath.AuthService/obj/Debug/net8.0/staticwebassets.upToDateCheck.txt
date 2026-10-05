@@ -47,6 +47,8 @@ wwwroot\css\layout.css
 wwwroot\css\components.css
 wwwroot\registro.html
 wwwroot\js\api.js
+wwwroot\juego.png
+wwwroot\formulario.html
 wwwroot\juego.apple-touch-icon.png
 wwwroot\juego.audio.position.worklet.js
 wwwroot\juego.audio.worklet.js
@@ -54,5 +56,5 @@ wwwroot\juego.html
 wwwroot\juego.icon.png
 wwwroot\juego.js
 wwwroot\juego.pck
-wwwroot\juego.png
 wwwroot\juego.wasm
+wwwroot\icons\bx-gaming.svg
