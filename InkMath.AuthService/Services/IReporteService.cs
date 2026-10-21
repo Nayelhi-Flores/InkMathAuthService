@@ -9,6 +9,7 @@ namespace InkMath.AuthService.Services
         Task<List<TopMaestroDto>> ObtenerTopMaestrosAsync(int top);
         Task<List<ReporteTestDto>> ObtenerReporteTransaccionalAsync(FiltroReporteTestDto filtro);
         Task<List<RankingEstudianteDto>> ObtenerRankingAulaAsync(long aulaId);
+        Task<ReporteGrupalAulaDto?> ObtenerReporteGrupalAulaAsync(long aulaId);
     }
 
     public class ReporteService : IReporteService
@@ -18,6 +19,49 @@ namespace InkMath.AuthService.Services
         public ReporteService(AplicationDbContext context)
         {
             _context = context;
+        }
+
+        public async Task<ReporteGrupalAulaDto?> ObtenerReporteGrupalAulaAsync(long aulaId)
+        {
+            var sql = @"
+            WITH resumen_niveles AS (
+                SELECT 
+                    ae.aula_id,
+                    ROUND(AVG(pn.puntaje)::numeric, 2) AS promedio_niveles,
+                    COUNT(DISTINCT CASE WHEN pn.estado_id = 3 THEN pn.nivel_id END) AS niveles_completados
+                FROM aula_estudiante ae
+                JOIN progreso_nivel pn ON pn.estudiante_id = ae.estudiante_id
+                WHERE ae.aula_id = {0}
+                GROUP BY ae.aula_id
+            ),
+            resumen_tests AS (
+                SELECT 
+                    ae.aula_id,
+                    ROUND(AVG(it.puntaje_obtenido)::numeric, 2) AS promedio_tests,
+                    COUNT(DISTINCT it.id) AS tests_realizados
+                FROM aula_estudiante ae
+                JOIN intentos_test it ON it.estudiante_id = ae.estudiante_id
+                WHERE ae.aula_id = {0}
+                GROUP BY ae.aula_id
+            )
+            SELECT 
+                a.id AS AulaId,
+                a.nombre AS NombreAula,
+                (SELECT COUNT(*) FROM aula_estudiante ae WHERE ae.aula_id = a.id) AS TotalEstudiantes,
+                COALESCE(rn.promedio_niveles, 0) AS PromedioGeneralNiveles,
+                COALESCE(rt.promedio_tests, 0) AS PromedioGeneralTests,
+                COALESCE(rn.niveles_completados, 0) AS TotalNivelesCompletados,
+                COALESCE(rt.tests_realizados, 0) AS TotalTestsRealizados
+            FROM aulas a
+            LEFT JOIN resumen_niveles rn ON rn.aula_id = a.id
+            LEFT JOIN resumen_tests rt ON rt.aula_id = a.id
+            WHERE a.id = {0} AND a.esta_activo = TRUE;";
+
+            var resultado = await _context.Database
+                .SqlQueryRaw<ReporteGrupalAulaDto>(sql, aulaId)
+                .ToListAsync();
+
+            return resultado.FirstOrDefault();
         }
 
         public async Task<List<TopMaestroDto>> ObtenerTopMaestrosAsync(int top)

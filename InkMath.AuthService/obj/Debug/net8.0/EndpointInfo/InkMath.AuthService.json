@@ -363,6 +363,29 @@
         }
       }
     },
+    "/api/Aulas/aula/{aulaId}/grupal": {
+      "get": {
+        "tags": [
+          "Aulas"
+        ],
+        "parameters": [
+          {
+            "name": "aulaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Auth/registro": {
       "post": {
         "tags": [

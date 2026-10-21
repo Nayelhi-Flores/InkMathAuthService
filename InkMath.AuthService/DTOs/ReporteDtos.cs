@@ -41,4 +41,15 @@ namespace InkMath.AuthService.DTOs
         [JsonPropertyName("total_preguntas")]
         public int TotalPreguntas { get; set; }
     }
+
+    public class ReporteGrupalAulaDto
+    {
+        public long AulaId { get; set; }
+        public string NombreAula { get; set; } = string.Empty;
+        public int TotalEstudiantes { get; set; }
+        public double PromedioGeneralNiveles { get; set; }
+        public double PromedioGeneralTests { get; set; }
+        public int TotalNivelesCompletados { get; set; }
+        public int TotalTestsRealizados { get; set; }
+    }
 }

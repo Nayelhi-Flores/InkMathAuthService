@@ -248,5 +248,18 @@ namespace InkMath.AuthService.Controllers
             var ranking = await _reporteService.ObtenerRankingAulaAsync(aulaId);
             return Ok(ranking);
         }
+
+        [HttpGet("aula/{aulaId}/grupal")]
+        [Authorize]
+        public async Task<IActionResult> ObtenerReporteGrupal(long aulaId)
+        {
+            var reporte = await _reporteService.ObtenerReporteGrupalAulaAsync(aulaId);
+            if (reporte == null)
+            {
+                return NotFound(new { message = "El aula especificada no existe o no se encuentra activa." });
+            }
+
+            return Ok(reporte);
+        }
     }
 }

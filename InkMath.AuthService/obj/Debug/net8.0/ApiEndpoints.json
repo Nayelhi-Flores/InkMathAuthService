@@ -54,6 +54,22 @@
   },
   {
     "ContainingType": "InkMath.AuthService.Controllers.AulasController",
+    "Method": "ObtenerReporteGrupal",
+    "RelativePath": "api/Aulas/aula/{aulaId}/grupal",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "aulaId",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.AulasController",
     "Method": "ObtenerRankingAula",
     "RelativePath": "api/Aulas/aula/{aulaId}/ranking",
     "HttpMethod": "GET",
