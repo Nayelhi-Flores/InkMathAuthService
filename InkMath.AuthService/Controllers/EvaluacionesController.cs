@@ -74,5 +74,21 @@ namespace InkMath.AuthService.Controllers
 
             return Ok(analisis);
         }
+
+        [HttpGet("maestro/{maestroId}/rezago")]
+        [Authorize]
+        public async Task<IActionResult> ObtenerAlertasRezago(long maestroId)
+        {
+            var alertas = await _reporteService.ObtenerAlertasRezagoPorMaestroAsync(maestroId);
+            return Ok(alertas);
+        }
+
+        [HttpGet("aula/{aulaId}/exportar-csv")]
+        [Authorize]
+        public async Task<IActionResult> ExportarReporteAulaCsv(long aulaId)
+        {
+            var archivoBytes = await _reporteService.ExportarReporteAulaCsvAsync(aulaId);
+            return File(archivoBytes, "text/csv", $"Reporte_Aula_{aulaId}_{DateTime.Now:yyyyMMdd}.csv");
+        }
     }
 }

@@ -423,6 +423,22 @@
   },
   {
     "ContainingType": "InkMath.AuthService.Controllers.EvaluacionesController",
+    "Method": "ExportarReporteAulaCsv",
+    "RelativePath": "api/Evaluaciones/aula/{aulaId}/exportar-csv",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "aulaId",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.EvaluacionesController",
     "Method": "ObtenerAnalisisIndividual",
     "RelativePath": "api/Evaluaciones/estudiante/{estudianteId}/analisis",
     "HttpMethod": "GET",
@@ -431,6 +447,22 @@
     "Parameters": [
       {
         "Name": "estudianteId",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.EvaluacionesController",
+    "Method": "ObtenerAlertasRezago",
+    "RelativePath": "api/Evaluaciones/maestro/{maestroId}/rezago",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "maestroId",
         "Type": "System.Int64",
         "IsRequired": true
       }

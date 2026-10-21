@@ -755,6 +755,52 @@
         }
       }
     },
+    "/api/Evaluaciones/maestro/{maestroId}/rezago": {
+      "get": {
+        "tags": [
+          "Evaluaciones"
+        ],
+        "parameters": [
+          {
+            "name": "maestroId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Evaluaciones/aula/{aulaId}/exportar-csv": {
+      "get": {
+        "tags": [
+          "Evaluaciones"
+        ],
+        "parameters": [
+          {
+            "name": "aulaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Monedas/mi-saldo": {
       "get": {
         "tags": [

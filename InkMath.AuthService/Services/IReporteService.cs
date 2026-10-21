@@ -1,6 +1,7 @@
 ﻿using InkMath.AuthService.Data;
 using InkMath.AuthService.DTOs;
 using Microsoft.EntityFrameworkCore;
+using System.Text;
 
 namespace InkMath.AuthService.Services
 {
@@ -11,6 +12,8 @@ namespace InkMath.AuthService.Services
         Task<List<RankingEstudianteDto>> ObtenerRankingAulaAsync(long aulaId);
         Task<ReporteGrupalAulaDto?> ObtenerReporteGrupalAulaAsync(long aulaId);
         Task<AnalisisIndividualDto?> ObtenerAnalisisIndividualAsync(long estudianteId);
+        Task<List<AlertaRezagoDto>> ObtenerAlertasRezagoPorMaestroAsync(long maestroId);
+        Task<byte[]> ExportarReporteAulaCsvAsync(long aulaId);
     }
 
     public class ReporteService : IReporteService
@@ -20,6 +23,60 @@ namespace InkMath.AuthService.Services
         public ReporteService(AplicationDbContext context)
         {
             _context = context;
+        }
+
+        public async Task<byte[]> ExportarReporteAulaCsvAsync(long aulaId)
+        {
+            var ranking = await ObtenerRankingAulaAsync(aulaId);
+
+            var builder = new StringBuilder();
+            // Encabezados en formato CSV
+            builder.AppendLine("Posicion,EstudianteId,NombreCompleto,PuntajeNiveles,PuntajeTests,PuntajeTotal");
+
+            foreach (var item in ranking)
+            {
+                builder.AppendLine($"{item.Posicion},{item.EstudianteId},\"{item.NombreCompleto}\",{item.PuntajeTotalNiveles},{item.PuntajeTotalTests},{item.PuntajeAcumulado}");
+            }
+
+            return Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(builder.ToString())).ToArray();
+        }
+
+        public async Task<List<AlertaRezagoDto>> ObtenerAlertasRezagoPorMaestroAsync(long maestroId)
+        {
+            var sql = @"
+            WITH promedios_estudiantes AS (
+                SELECT 
+                    ae.estudiante_id,
+                    ae.aula_id,
+                    a.nombre AS nombre_aula,
+                    u.nombre || ' ' || u.apellido AS nombre_estudiante,
+                    COALESCE(ROUND(AVG(pn.puntaje)::numeric, 2), 0) AS promedio_nivel,
+                    COUNT(CASE WHEN pn.puntaje < 60 THEN 1 END) AS niveles_reprobados
+                FROM aulas a
+                JOIN aula_estudiante ae ON ae.aula_id = a.id
+                JOIN usuarios u ON u.id = ae.estudiante_id
+                LEFT JOIN progreso_nivel pn ON pn.estudiante_id = ae.estudiante_id
+                WHERE a.maestro_id = {0} AND a.esta_activo = TRUE AND u.esta_activo = TRUE
+                GROUP BY ae.estudiante_id, ae.aula_id, a.nombre, u.nombre, u.apellido
+            )
+            SELECT 
+                estudiante_id AS EstudianteId,
+                nombre_estudiante AS NombreEstudiante,
+                aula_id AS AulaId,
+                nombre_aula AS NombreAula,
+                promedio_nivel AS PromedioGeneral,
+                niveles_reprobados AS NivelesReprobados,
+                CASE 
+                    WHEN promedio_nivel < 40 OR niveles_reprobados >= 5 THEN 'Alto'
+                    ELSE 'Medio'
+                END AS NivelRiesgo
+            FROM promedios_estudiantes
+            WHERE promedio_nivel < 60 OR niveles_reprobados >= 1
+            ORDER BY promedio_nivel ASC;";
+
+            return await _context.Database
+                .SqlQueryRaw<AlertaRezagoDto>(sql, maestroId)
+                .ToListAsync();
         }
 
         public async Task<AnalisisIndividualDto?> ObtenerAnalisisIndividualAsync(long estudianteId)

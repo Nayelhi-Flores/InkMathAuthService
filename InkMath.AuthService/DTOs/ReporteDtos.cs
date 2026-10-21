@@ -76,4 +76,15 @@ namespace InkMath.AuthService.DTOs
         public string? RespuestaDada { get; set; }
         public DateTimeOffset Fecha { get; set; }
     }
+
+    public class AlertaRezagoDto
+    {
+        public long EstudianteId { get; set; }
+        public string NombreEstudiante { get; set; } = string.Empty;
+        public long AulaId { get; set; }
+        public string NombreAula { get; set; } = string.Empty;
+        public double PromedioGeneral { get; set; }
+        public int NivelesReprobados { get; set; }
+        public string NivelRiesgo { get; set; } = "Medio"; // Alto, Medio
+    }
 }
