@@ -54,6 +54,22 @@
   },
   {
     "ContainingType": "InkMath.AuthService.Controllers.AulasController",
+    "Method": "ObtenerRankingAula",
+    "RelativePath": "api/Aulas/aula/{aulaId}/ranking",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "aulaId",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.AulasController",
     "Method": "CrearAula",
     "RelativePath": "api/Aulas/crear",
     "HttpMethod": "POST",

@@ -8,6 +8,7 @@ namespace InkMath.AuthService.Services
     {
         Task<List<TopMaestroDto>> ObtenerTopMaestrosAsync(int top);
         Task<List<ReporteTestDto>> ObtenerReporteTransaccionalAsync(FiltroReporteTestDto filtro);
+        Task<List<RankingEstudianteDto>> ObtenerRankingAulaAsync(long aulaId);
     }
 
     public class ReporteService : IReporteService
@@ -31,6 +32,29 @@ namespace InkMath.AuthService.Services
 
             return await _context.Database
                 .SqlQueryRaw<TopMaestroDto>(sql, top)
+                .ToListAsync();
+        }
+
+        public async Task<List<RankingEstudianteDto>> ObtenerRankingAulaAsync(long aulaId)
+        {
+            var sql = @"
+            SELECT 
+                u.id AS EstudianteId,
+                CONCAT(u.nombre, ' ', u.apellido) AS NombreCompleto,
+                COALESCE(SUM(DISTINCT pn.puntaje), 0) AS PuntajeTotalNiveles,
+                COALESCE(SUM(DISTINCT it.puntaje_obtenido), 0) AS PuntajeTotalTests,
+                (COALESCE(SUM(DISTINCT pn.puntaje), 0) + COALESCE(SUM(DISTINCT it.puntaje_obtenido), 0)) AS PuntajeAcumulado,
+                RANK() OVER (ORDER BY (COALESCE(SUM(DISTINCT pn.puntaje), 0) + COALESCE(SUM(DISTINCT it.puntaje_obtenido), 0)) DESC) AS Posicion
+            FROM usuarios u
+            JOIN aula_estudiante ae ON ae.estudiante_id = u.id
+            LEFT JOIN progreso_nivel pn ON pn.estudiante_id = u.id
+            LEFT JOIN intentos_test it ON it.estudiante_id = u.id
+            WHERE ae.aula_id = {0} AND u.esta_activo = TRUE
+            GROUP BY u.id, u.nombre, u.apellido
+            ORDER BY PuntajeAcumulado DESC, u.id ASC;";
+
+            return await _context.Database
+                .SqlQueryRaw<RankingEstudianteDto>(sql, aulaId)
                 .ToListAsync();
         }
 

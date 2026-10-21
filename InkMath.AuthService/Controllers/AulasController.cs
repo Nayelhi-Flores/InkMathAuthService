@@ -14,10 +14,12 @@ namespace InkMath.AuthService.Controllers
     public class AulasController : ControllerBase
     {
         private readonly IAulaService _aulaService;
+        private readonly IReporteService _reporteService;
 
-        public AulasController(IAulaService aulaService)
+        public AulasController(IAulaService aulaService, IReporteService reporteService)
         {
             _aulaService = aulaService;
+            _reporteService = reporteService;
         }
 
         [HttpPost("crear")]
@@ -237,6 +239,14 @@ namespace InkMath.AuthService.Controllers
                        ?? User.FindFirst("sub")?.Value;
 
             return long.TryParse(claimId, out long usuarioId) ? usuarioId : 0;
+        }
+
+        [HttpGet("aula/{aulaId}/ranking")]
+        [Authorize]
+        public async Task<IActionResult> ObtenerRankingAula(long aulaId)
+        {
+            var ranking = await _reporteService.ObtenerRankingAulaAsync(aulaId);
+            return Ok(ranking);
         }
     }
 }
