@@ -1,4 +1,7 @@
-﻿namespace InkMath.AuthService.DTOs
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
+
+namespace InkMath.AuthService.DTOs
 {
     public class CrearPreguntaDto
     {
@@ -62,5 +65,29 @@
         public int PuntajeObtenido { get; set; }
         public long MonedasGanadas { get; set; }
         public long NuevoSaldoMonedas { get; set; }
+    }
+
+    public class AnularTestDto
+    {
+        public string Justificacion { get; set; } = string.Empty;
+    }
+
+    public class TopMaestroDto
+    {
+        [JsonPropertyName("maestro_id")]
+        [Column("maestro_id")]
+        public long MaestroId { get; set; }
+
+        [JsonPropertyName("nombre")]
+        [Column("nombre")]
+        public string Nombre { get; set; } = string.Empty;
+
+        [JsonPropertyName("total_preguntas")]
+        [Column("total_preguntas")]
+        public int TotalPreguntas { get; set; }
+
+        [JsonPropertyName("posicion_ranking")]
+        [Column("posicion_ranking")]
+        public long PosicionRanking { get; set; }
     }
 }

@@ -19,6 +19,9 @@ namespace InkMath.AuthService.Models
         [Column("pregunta")]
         public string Pregunta { get; set; } = string.Empty;
 
+        [Column("esta_activa")]
+        public bool EstaActiva { get; set; } = true;
+
         [ForeignKey(nameof(TestId))]
         public TestPersonalizado? Test { get; set; }
 

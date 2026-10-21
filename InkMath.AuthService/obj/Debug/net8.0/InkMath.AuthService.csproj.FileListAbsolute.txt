@@ -163,3 +163,6 @@ C:\Users\Kathe\source\repos\InkMath.AuthService\InkMath.AuthService\obj\Debug\ne
 C:\Users\Kathe\source\repos\InkMath.AuthService\InkMath.AuthService\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 C:\Users\Kathe\source\repos\InkMath.AuthService\InkMath.AuthService\bin\Debug\net8.0\Npgsql.dll
 C:\Users\Kathe\source\repos\InkMath.AuthService\InkMath.AuthService\bin\Debug\net8.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll
+C:\Users\Kathe\source\repos\InkMath.AuthService\InkMath.AuthService\bin\Debug\net8.0\Microsoft.Extensions.Caching.StackExchangeRedis.dll
+C:\Users\Kathe\source\repos\InkMath.AuthService\InkMath.AuthService\bin\Debug\net8.0\Pipelines.Sockets.Unofficial.dll
+C:\Users\Kathe\source\repos\InkMath.AuthService\InkMath.AuthService\bin\Debug\net8.0\StackExchange.Redis.dll

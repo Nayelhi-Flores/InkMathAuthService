@@ -135,7 +135,10 @@
 
     // DELETE /api/Tests/{id} está restringido a Roles="1" en el backend
     async function eliminarTests(ids) {
-        const resultados = await Promise.allSettled(ids.map(id => api(`/api/Tests/${id}`, { method: 'DELETE' })));
+        // La anulación exige una justificación (10 a 500 caracteres) para la auditoría en MongoDB.
+        const justificacion = (prompt('Justificación de la anulación (10 a 500 caracteres):') || '').trim();
+        if (justificacion.length < 10 || justificacion.length > 500) return alert('La justificación debe tener entre 10 y 500 caracteres.');
+        const resultados = await Promise.allSettled(ids.map(id => api(`/api/Tests/${id}`, { method: 'DELETE', body: JSON.stringify({ justificacion }) })));
         const fallidos = resultados.filter(r => r.status !== 'fulfilled' || !r.value.ok);
         if (fallidos.length) {
             const prohibido = fallidos.some(r => r.status === 'fulfilled' && r.value.status === 403);
@@ -357,6 +360,24 @@
     $('btnCancelarNuevo').addEventListener('click', () => mostrarNuevo(false));
     bcLista.addEventListener('click', () => { if (!vistaNuevo.hidden) mostrarNuevo(false); });
 
+    // ---------- Control de UI por rol ----------
+    // Solo el Administrador puede anular tests (DELETE = Roles "1"). Para el resto se ocultan los controles de
+    // eliminación; aunque se forzara la petición, el backend responde 403 Forbidden.
+    async function aplicarControlPorRol() {
+        try {
+            const res = await api('/api/Usuarios/me');
+            if (!res.ok) return;
+            const me = await res.json();
+            const esAdmin = Number(me.rolId) === 1 || /administrador/i.test(me.rolNombre || '');
+            if (esAdmin) return;
+            $('btnEliminarBloque').style.display = 'none';
+            const estilo = document.createElement('style');
+            estilo.textContent = '[data-action="eliminar"] { display: none !important; }';
+            document.head.appendChild(estilo);
+        } catch (err) { console.error(err); }
+    }
+
+    aplicarControlPorRol();
     cargarAulas();
     cargar(true);
 });

@@ -48,9 +48,18 @@ namespace InkMath.AuthService.Data
             base.OnModelCreating(modelBuilder);
 
             // Filtros globales de Soft Delete
-            modelBuilder.Entity<TestPersonalizado>().HasQueryFilter(t => t.EstaActivo);
+            modelBuilder.Entity<TestPersonalizado>()
+                .HasQueryFilter(t => t.EstaActivo)
+                .ToTable(tb => tb.HasTrigger("TRG_TestPersonalizado_SoftDelete"));
+
+            if (Database.IsSqlServer())
+            {
+                modelBuilder.Entity<PreguntaTest>()
+                    .ToTable("preguntas_test", tb => tb.HasTrigger("TRG_PreguntaTest_ControlTotal"));
+            }
+
             modelBuilder.Entity<Aula>().HasQueryFilter(a => a.EstaActivo);
-            //modelBuilder.Entity<Usuario>().HasQueryFilter(u => u.EstaActivo);
+            modelBuilder.Entity<Usuario>().HasQueryFilter(u => u.EstaActivo);
             //modelBuilder.Entity<Recurso>().HasQueryFilter(r => r.EstaActivo);
             //modelBuilder.Entity<Suscripcion>().HasQueryFilter(s => s.EstaActivo);
 

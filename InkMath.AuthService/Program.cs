@@ -20,6 +20,13 @@ else
     builder.Services.AddDbContext<AplicationDbContext>(o =>
         o.UseSqlServer(builder.Configuration.GetConnectionString("SqlServerConnection")));
 
+// Configuración del caché distribuido
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Redis");
+    options.InstanceName = "InkMath_";
+});
+
 // 2. Servicios
 builder.Services.AddSingleton<IAuditoriaService, AuditoriaService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -30,8 +37,10 @@ builder.Services.AddScoped<IAulaService, AulaService>();
 builder.Services.AddScoped<ITestService, TestService>();
 builder.Services.AddScoped<IEvaluacionService, EvaluacionService>();
 builder.Services.AddScoped<INivelService, NivelService>();
+builder.Services.AddScoped<ICacheService, RedisCacheService>();
+builder.Services.AddScoped<IReporteService, ReporteService>();
 
-// Detrás de proxy (nginx/Cloudflare): IP real y esquema https
+// Detrás de proxy (Cloudflare): IP real y esquema https
 builder.Services.Configure<ForwardedHeadersOptions>(o =>
 {
     o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;

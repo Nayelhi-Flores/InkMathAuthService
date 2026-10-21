@@ -9,16 +9,31 @@ namespace InkMath.AuthService.Models
         [BsonRepresentation(BsonType.ObjectId)]
         public string? Id { get; set; }
 
-        [BsonElement("usuario_id")]
-        public long UsuarioId { get; set; }
+        [BsonElement("fecha_evento")]
+        public DateTime FechaEvento { get; set; } = DateTime.UtcNow;
+
+        [BsonElement("modulo")]
+        public string Modulo { get; set; } = string.Empty;
 
         [BsonElement("accion")]
         public string Accion { get; set; } = string.Empty;
 
-        [BsonElement("descripcion")]
-        public string Descripcion { get; set; } = string.Empty;
+        [BsonElement("entidad_afectada_id")]
+        public string EntidadAfectadaId { get; set; } = string.Empty;
 
-        [BsonElement("timestamp")]
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        [BsonElement("jwt_usuario_ejecutor")]
+        public string JwtUsuarioEjecutor { get; set; } = string.Empty;
+
+        [BsonElement("rol_auth")]
+        public string RolAuth { get; set; } = string.Empty;
+
+        [BsonElement("justificacion_cambio")]
+        public string JustificacionCambio { get; set; } = string.Empty;
+
+        [BsonElement("datos_anteriores")]
+        public object? DatosAnteriores { get; set; }
+
+        [BsonElement("datos_nuevos")]
+        public object? DatosNuevos { get; set; }
     }
 }

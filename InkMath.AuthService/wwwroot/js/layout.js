@@ -10,8 +10,16 @@ const NAV_ITEMS = [
     { href: 'evaluaciones.html', icon: 'icons/bx-rocket.svg', label: 'Evaluaciones', fg: '#6F4FB8', bg: '#E4DCF7' },
     { href: 'recursos.html', icon: 'icons/bx-folder.svg', label: 'Recursos', fg: '#1A9BAB', bg: '#D2F1F4' },
     { href: 'configuracion.html', icon: 'icons/bx-cog.svg', label: 'Configuración', fg: '#D98A1F', bg: '#FDECC8' },
-    { href: 'index.html', icon: 'icons/bx-power.svg', label: 'Salir', fg: '#D98A1F', bg: '#FDECC8' }
 ];
+
+// Navegación del panel de Administrador (body[data-nav="admin"]): el rol 1 no usa las pantallas de maestro.
+const ADMIN_NAV_ITEMS = [
+    { href: 'admin.html', icon: 'icons/bx-cog.svg', label: 'Panel Admin', fg: '#6F4FB8', bg: '#E4DCF7' },
+];
+
+function getNavItems() {
+    return document.body.dataset.nav === 'admin' ? ADMIN_NAV_ITEMS : NAV_ITEMS;
+}
 
 function initLayout() {
     const currentPage = window.location.pathname.split('/').pop() || 'aulas.html';
@@ -36,7 +44,7 @@ function initSidebar(currentPage) {
             <img src="icons/V1.svg" alt="" class="brand-logo brand-logo--mini">
         </div>
         <nav class="sidebar-nav">
-            ${NAV_ITEMS.map(i => `
+            ${getNavItems().map(i => `
             <a href="${i.href}" class="nav-item ${currentPage === i.href ? 'active' : ''}" title="${i.label}">
                 <img src="${i.icon}" alt="" class="nav-icon">
                 <span>${i.label}</span>
@@ -94,7 +102,7 @@ function initBottomNav(currentPage) {
 
     // El ícono se pinta con mask-image (inline, para que la URL relativa se
     // resuelva contra el HTML) y así toma el color del ítem activo.
-    bottomNav.innerHTML = NAV_ITEMS.map(i => {
+    bottomNav.innerHTML = getNavItems().map(i => {
         const active = currentPage === i.href;
         return `
             <a href="${i.href}" class="bottom-nav-item ${active ? 'active' : ''}"

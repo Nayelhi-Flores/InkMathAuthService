@@ -40,20 +40,59 @@ namespace InkMath.AuthService.Controllers
             return CreatedAtAction(nameof(CrearTest), new { id = resultado.TestId }, resultado);
         }
 
-        [HttpDelete("{id:long}")]
-        [Authorize(Roles = "1")]
-        public async Task<IActionResult> AnularTest(long id)
+        [HttpPut("{id}")]
+        [Authorize(Roles = "1,2")]
+        public async Task<IActionResult> ActualizarTest(long id, [FromBody] CrearTestDto dto)
         {
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var resultado = await _testService.ActualizarTestAsync(id, dto);
+            if (!resultado)
+                return NotFound(new { mensaje = "El test especificado no fue encontrado." });
+
+            return Ok(new { mensaje = "Test actualizado exitosamente." });
+        }
+
+        [HttpDelete("{id:long}")]
+        [Authorize(Roles = "1")] // Exclusivo Administrador
+        public async Task<IActionResult> AnularTest(long id, [FromBody] AnularTestDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Justificacion))
+            {
+                return BadRequest(new { mensaje = "Debe proporcionar una justificación válida para anular el test." });
+            }
+
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             long.TryParse(userIdClaim, out long usuarioId);
 
-            var exito = await _testService.AnularTestAsync(id, usuarioId);
+            var nombreUsuario = User.FindFirst(ClaimTypes.Name)?.Value ?? "Administrador";
+            var rolAuth = "Administrador";
+
+            var exito = await _testService.AnularTestAsync(id, usuarioId, nombreUsuario, rolAuth, dto.Justificacion);
+
             if (!exito)
             {
                 return NotFound(new { mensaje = "El test especificado no existe o ya fue anulado." });
             }
 
             return Ok(new { mensaje = $"Test {id} anulado correctamente y evento auditado." });
+        }
+
+        [HttpPut("{testId}/preguntas/{preguntaId}/estado")]
+        [Authorize(Roles = "1,2")] // Maestro o Administrador
+        public async Task<IActionResult> CambiarEstadoPregunta(
+            [FromRoute] long testId,
+            [FromRoute] long preguntaId,
+            [FromQuery] bool estaActiva,
+            [FromQuery] long maestroId = 20002)
+        {
+            var resultado = await _testService.CambiarEstadoPreguntaAsync(testId, preguntaId, estaActiva, maestroId);
+
+            if (!resultado)
+            {
+                return NotFound(new { mensaje = "La pregunta o el test especificado no existe o no pertenece al maestro." });
+            }
+
+            return Ok(new { mensaje = $"Estado de la pregunta {preguntaId} actualizado a {(estaActiva ? "activa (1)" : "inactiva (0)")} exitosamente." });
         }
 
         [HttpPost("asignar-test")]

@@ -6,6 +6,7 @@ namespace InkMath.AuthService.Services
     public interface IAuditoriaService
     {
         Task RegistrarEventoAsync(long usuarioId, string accion, string descripcion);
+        Task RegistrarEventoDetalladoAsync(LogAuditoria log);
     }
 
     public class AuditoriaService : IAuditoriaService
@@ -23,13 +24,31 @@ namespace InkMath.AuthService.Services
         {
             var log = new LogAuditoria
             {
-                UsuarioId = usuarioId,
+                FechaEvento = DateTime.UtcNow,
+                Modulo = "SISTEMA",
                 Accion = accion,
-                Descripcion = descripcion,
-                Timestamp = DateTime.UtcNow
+                EntidadAfectadaId = usuarioId.ToString(),
+                JwtUsuarioEjecutor = usuarioId.ToString(),
+                RolAuth = "Usuario",
+                JustificacionCambio = descripcion,
+                DatosAnteriores = null,
+                DatosNuevos = null
             };
 
             await _coleccion.InsertOneAsync(log);
+        }
+
+        public async Task RegistrarEventoDetalladoAsync(LogAuditoria log)
+        {
+            try
+            {
+                await _coleccion.InsertOneAsync(log);
+            }
+            catch (Exception ex)
+            {
+                // Fail-safe: Evitamos que una falla de Mongo afecte al usuario
+                Console.WriteLine($"[Auditoria Error]: No se pudo registrar el log en Mongo: {ex.Message}");
+            }
         }
     }
 }

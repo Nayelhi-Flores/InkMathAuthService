@@ -29,5 +29,8 @@ namespace InkMath.AuthService.Models
         public DateTimeOffset CreadoEn { get; set; } = DateTimeOffset.UtcNow;
 
         public ICollection<PreguntaTest> Preguntas { get; set; } = new List<PreguntaTest>();
+
+        [Column("total_preguntas")]
+        public int TotalPreguntas { get; set; }
     }
 }

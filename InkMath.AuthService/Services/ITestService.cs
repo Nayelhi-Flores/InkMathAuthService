@@ -1,15 +1,20 @@
 ﻿using InkMath.AuthService.Data;
 using InkMath.AuthService.DTOs;
 using InkMath.AuthService.Models;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using System.Text.Json;
 
 namespace InkMath.AuthService.Services
 {
     public interface ITestService
     {
         Task<TestDetalleResponseDto> CrearTestTransaccionalAsync(CrearTestDto dto);
-        Task<bool> AnularTestAsync(long testId, long usuarioId);
+        Task<bool> ActualizarTestAsync(long id, CrearTestDto dto, string? usuarioIp = null);
+        Task<bool> CambiarEstadoPreguntaAsync(long testId, long preguntaId, bool estaActiva, long maestroId);
+        Task SincronizarAulasAsync(long testId, List<long> aulaIds);
+        Task<bool> AnularTestAsync(long testId, long usuarioId, string nombreUsuario, string rolAuth, string justificacion);
         Task<(bool Exito, string Mensaje)> AsignarTestsAAulasAsync(long maestroId, List<long> testIds, List<long> aulaIds);
         Task<RespuestaPaginadaDto<TestDetalleResponseDto>> ObtenerTestsPaginadosPorMaestroAsync(long maestroId, ConsultaTestsPaginadaDto dto);
         Task<List<TestDetalleResponseDto>> ObtenerTestsPorMaestroAsync(long maestroId);
@@ -18,35 +23,93 @@ namespace InkMath.AuthService.Services
     public class TestService : ITestService
     {
         private readonly IAuditoriaService _auditoriaService;
+        private readonly ICacheService _cacheService;
         private readonly AplicationDbContext _context;
 
-        public TestService(AplicationDbContext context, IAuditoriaService auditoriaService)
+        public TestService(AplicationDbContext context, IAuditoriaService auditoriaService, ICacheService cacheService)
         {
             _context = context;
             _auditoriaService = auditoriaService;
+            _cacheService = cacheService;
         }
 
         public async Task<TestDetalleResponseDto> CrearTestTransaccionalAsync(CrearTestDto dto)
         {
-            // Iniciar la transacción ACID en la base de datos relacional
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
-                // 1. Insertar Encabezado Maestro (tests_personalizados)
-                var nuevoTest = new TestPersonalizado
+                long testIdGenerado;
+
+                // Si la base de datos es SQL Server, delegamos la inserción al Procedimiento Almacenado
+                if (_context.Database.IsSqlServer())
                 {
-                    MaestroId = dto.MaestroId,
-                    Nombre = dto.Nombre,
-                    FechaDisponibleDesde = dto.FechaDisponibleDesde,
-                    FechaDisponibleHasta = dto.FechaDisponibleHasta,
-                    CreadoEn = DateTimeOffset.UtcNow
-                };
+                    var pMaestroId = new SqlParameter("@MaestroId", dto.MaestroId);
+                    var pNombre = new SqlParameter("@Nombre", dto.Nombre);
+                    var pFechaDesde = new SqlParameter("@FechaDesde", (object?)dto.FechaDisponibleDesde ?? DBNull.Value);
+                    var pFechaHasta = new SqlParameter("@FechaHasta", (object?)dto.FechaDisponibleHasta ?? DBNull.Value);
 
-                _context.TestsPersonalizados.Add(nuevoTest);
-                await _context.SaveChangesAsync(); // Genera el Id del Maestro
+                    // Serializamos las preguntas y opciones a JSON para el parámetro @PreguntasJson del SP
+                    string preguntasJson = JsonSerializer.Serialize(dto.Preguntas);
+                    var pPreguntasJson = new SqlParameter("@PreguntasJson", preguntasJson);
 
-                // Asignación Masiva a Aulas (Si se enviaron en la petición)
+                    var pNuevoTestId = new SqlParameter("@NuevoTestId", System.Data.SqlDbType.BigInt)
+                    {
+                        Direction = System.Data.ParameterDirection.Output
+                    };
+
+                    await _context.Database.ExecuteSqlRawAsync(
+                        "EXEC dbo.sp_CrearTestPersonalizado @MaestroId, @Nombre, @FechaDesde, @FechaHasta, @PreguntasJson, @NuevoTestId OUTPUT",
+                        pMaestroId, pNombre, pFechaDesde, pFechaHasta, pPreguntasJson, pNuevoTestId
+                    );
+
+                    testIdGenerado = (long)pNuevoTestId.Value;
+                }
+                else
+                {
+                    // Flujo portable para PostgreSQL
+                    var nuevoTest = new TestPersonalizado
+                    {
+                        MaestroId = dto.MaestroId,
+                        Nombre = dto.Nombre,
+                        FechaDisponibleDesde = dto.FechaDisponibleDesde,
+                        FechaDisponibleHasta = dto.FechaDisponibleHasta,
+                        CreadoEn = DateTimeOffset.UtcNow
+                    };
+
+                    _context.TestsPersonalizados.Add(nuevoTest);
+                    await _context.SaveChangesAsync();
+                    testIdGenerado = nuevoTest.Id;
+
+                    foreach (var preguntaDto in dto.Preguntas)
+                    {
+                        var nuevaPregunta = new PreguntaTest
+                        {
+                            TestId = testIdGenerado,
+                            TipoPreguntaId = preguntaDto.TipoPreguntaId,
+                            Pregunta = preguntaDto.Pregunta
+                        };
+
+                        _context.PreguntasTest.Add(nuevaPregunta);
+                        await _context.SaveChangesAsync();
+
+                        if (preguntaDto.Opciones != null && preguntaDto.Opciones.Count > 0)
+                        {
+                            for (int i = 0; i < preguntaDto.Opciones.Count; i++)
+                            {
+                                _context.OpcionesPregunta.Add(new OpcionPregunta
+                                {
+                                    PreguntaId = nuevaPregunta.Id,
+                                    TextoOpcion = preguntaDto.Opciones[i],
+                                    EsCorrecta = (i == preguntaDto.OpcionCorrectaIndex)
+                                });
+                            }
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+                }
+
+                // Asignación de Aulas (Común para ambos motores dentro de la misma transacción)
                 if (dto.AulaIds != null && dto.AulaIds.Count > 0)
                 {
                     foreach (var aulaId in dto.AulaIds)
@@ -54,71 +117,169 @@ namespace InkMath.AuthService.Services
                         _context.AulaTests.Add(new AulaTest
                         {
                             AulaId = aulaId,
-                            TestId = nuevoTest.Id,
+                            TestId = testIdGenerado,
                             FechaAsignacion = DateTimeOffset.UtcNow
                         });
                     }
                     await _context.SaveChangesAsync();
                 }
 
-                // 2. Insertar Líneas del Detalle (preguntas_test y opciones_pregunta)
-                foreach (var preguntaDto in dto.Preguntas)
-                {
-                    var nuevaPregunta = new PreguntaTest
-                    {
-                        TestId = nuevoTest.Id,
-                        TipoPreguntaId = preguntaDto.TipoPreguntaId,
-                        Pregunta = preguntaDto.Pregunta
-                    };
-
-                    _context.PreguntasTest.Add(nuevaPregunta);
-                    await _context.SaveChangesAsync(); // Genera el Id de la Pregunta
-
-                    // 3. Insertar Sub-detalle de Opciones si la pregunta tiene opciones
-                    if (preguntaDto.Opciones != null && preguntaDto.Opciones.Count > 0)
-                    {
-                        for (int i = 0; i < preguntaDto.Opciones.Count; i++)
-                        {
-                            var nuevaOpcion = new OpcionPregunta
-                            {
-                                PreguntaId = nuevaPregunta.Id,
-                                TextoOpcion = preguntaDto.Opciones[i],
-                                EsCorrecta = (i == preguntaDto.OpcionCorrectaIndex)
-                            };
-
-                            _context.OpcionesPregunta.Add(nuevaOpcion);
-                        }
-                        await _context.SaveChangesAsync();
-                    }
-                }
-
-                // 4. Confirmar la Transacción Relacional
                 await transaction.CommitAsync();
 
-                // 5. Registrar evento en MongoDB (logs_auditoria)
-                await _auditoriaService.RegistrarEventoAsync(
+                // Registrar auditoría NoSQL
+                _ = Task.Run(() => _auditoriaService.RegistrarEventoAsync(
                     dto.MaestroId,
                     "CREAR_TEST",
-                    $"Se creó el test '{nuevoTest.Nombre}' (ID: {nuevoTest.Id}) asignado a {dto.AulaIds?.Count ?? 0} aulas."
-                );
+                    $"Se creó el test '{dto.Nombre}' (ID: {testIdGenerado}) asignado a {dto.AulaIds?.Count ?? 0} aulas."
+                ));
 
                 return new TestDetalleResponseDto
                 {
-                    TestId = nuevoTest.Id,
-                    Nombre = nuevoTest.Nombre,
-                    MaestroId = nuevoTest.MaestroId,
-                    FechaDisponibleDesde = nuevoTest.FechaDisponibleDesde,
-                    FechaDisponibleHasta = nuevoTest.FechaDisponibleHasta,
+                    TestId = testIdGenerado,
+                    Nombre = dto.Nombre,
+                    MaestroId = dto.MaestroId,
+                    FechaDisponibleDesde = dto.FechaDisponibleDesde,
+                    FechaDisponibleHasta = dto.FechaDisponibleHasta,
                     AulasAsignadas = dto.AulaIds?.Count ?? 0,
-                    CreadoEn = nuevoTest.CreadoEn,
+                    CreadoEn = DateTimeOffset.UtcNow,
                     TotalPreguntas = dto.Preguntas.Count
                 };
             }
             catch (Exception)
             {
-                // Deshacer todos los cambios en caso de error
                 await transaction.RollbackAsync();
                 throw;
+            }
+        }
+
+        public async Task<bool> ActualizarTestAsync(long id, CrearTestDto dto, string? usuarioIp = null)
+        {
+            var testAnterior = await _context.TestsPersonalizados
+                 .AsNoTracking()
+                 .Include(t => t.Preguntas)
+                 .ThenInclude(p => p.Opciones)
+                 .FirstOrDefaultAsync(t => t.Id == id);
+
+            string? datosAnterioresJson = null;
+
+            if (testAnterior != null)
+            {
+                var snapshotAnterior = new
+                {
+                    testAnterior.Id,
+                    testAnterior.MaestroId,
+                    testAnterior.Nombre,
+                    testAnterior.FechaDisponibleDesde,
+                    testAnterior.FechaDisponibleHasta,
+                    Preguntas = testAnterior.Preguntas.Select(p => new
+                    {
+                        p.Id,
+                        p.TipoPreguntaId,
+                        p.Pregunta,
+                        Opciones = p.Opciones.Select(o => new
+                        {
+                            o.Id,
+                            o.TextoOpcion,
+                            o.EsCorrecta
+                        }).ToList()
+                    }).ToList()
+                };
+
+                datosAnterioresJson = JsonSerializer.Serialize(snapshotAnterior);
+            }
+
+            var esSqlServer = _context.Database.IsSqlServer();
+
+            if (esSqlServer)
+            {
+                var preguntasJson = JsonSerializer.Serialize(dto.Preguntas);
+                var testIdParam = new SqlParameter("@TestId", id);
+                var maestroIdParam = new SqlParameter("@MaestroId", dto.MaestroId);
+                var nombreParam = new SqlParameter("@Nombre", dto.Nombre);
+                var fechaDesdeParam = new SqlParameter("@FechaDesde", (object?)dto.FechaDisponibleDesde ?? DBNull.Value);
+                var fechaHastaParam = new SqlParameter("@FechaHasta", (object?)dto.FechaDisponibleHasta ?? DBNull.Value);
+                var preguntasJsonParam = new SqlParameter("@PreguntasJson", preguntasJson);
+
+                await _context.Database.ExecuteSqlRawAsync(
+                    "EXEC dbo.sp_ActualizarTestPersonalizado @TestId, @MaestroId, @Nombre, @FechaDesde, @FechaHasta, @PreguntasJson",
+                    testIdParam, maestroIdParam, nombreParam, fechaDesdeParam, fechaHastaParam, preguntasJsonParam);
+
+                await SincronizarAulasAsync(id, dto.AulaIds);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                using var transaction = await _context.Database.BeginTransactionAsync();
+
+                var test = await _context.TestsPersonalizados
+                    .Include(t => t.Preguntas)
+                    .ThenInclude(p => p.Opciones)
+                    .FirstOrDefaultAsync(t => t.Id == id && t.MaestroId == dto.MaestroId);
+
+                if (test == null) return false;
+
+                test.Nombre = dto.Nombre;
+                test.FechaDisponibleDesde = dto.FechaDisponibleDesde;
+                test.FechaDisponibleHasta = dto.FechaDisponibleHasta;
+
+                _context.PreguntasTest.RemoveRange(test.Preguntas);
+
+                foreach (var pDto in dto.Preguntas)
+                {
+                    var nuevaPregunta = new PreguntaTest
+                    {
+                        TestId = id,
+                        TipoPreguntaId = pDto.TipoPreguntaId,
+                        Pregunta = pDto.Pregunta,
+                        Opciones = pDto.Opciones.Select((opt, idx) => new OpcionPregunta
+                        {
+                            TextoOpcion = opt,
+                            EsCorrecta = idx == pDto.OpcionCorrectaIndex
+                        }).ToList()
+                    };
+                    _context.PreguntasTest.Add(nuevaPregunta);
+                }
+
+                await SincronizarAulasAsync(id, dto.AulaIds);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+
+            await _auditoriaService.RegistrarEventoDetalladoAsync(new LogAuditoria
+            {
+                FechaEvento = DateTime.UtcNow,
+                Modulo = "TESTS",
+                Accion = "ACTUALIZAR_TEST",
+                EntidadAfectadaId = id.ToString(),
+                JwtUsuarioEjecutor = dto.MaestroId.ToString(),
+                RolAuth = "Maestro",
+                JustificacionCambio = $"Se actualizó el test '{dto.Nombre}' (ID: {id}).",
+                DatosAnteriores = datosAnterioresJson,
+                DatosNuevos = JsonSerializer.Serialize(dto)
+            });
+
+            return true;
+        }
+
+        public async Task SincronizarAulasAsync(long testId, List<long> aulaIds)
+        {
+            if (aulaIds == null) return;
+
+            var asignacionesExistentes = await _context.AulaTests
+                .Where(ta => ta.TestId == testId)
+                .ToListAsync();
+
+            _context.AulaTests.RemoveRange(asignacionesExistentes);
+
+            if (aulaIds.Any())
+            {
+                var nuevasAsignaciones = aulaIds.Select(aulaId => new AulaTest
+                {
+                    TestId = testId,
+                    AulaId = aulaId
+                });
+
+                await _context.AulaTests.AddRangeAsync(nuevasAsignaciones);
             }
         }
 
@@ -177,28 +338,50 @@ namespace InkMath.AuthService.Services
             return (true, $"Se asignaron los tests a las aulas correspondientes.");
         }
 
-        public async Task<bool> AnularTestAsync(long testId, long usuarioId)
+        public async Task<bool> AnularTestAsync(long testId, long usuarioId, string nombreUsuario, string rolAuth, string justificacion)
         {
             var test = await _context.TestsPersonalizados.FindAsync(testId);
-            if (test == null) return false;
+            if (test == null || !test.EstaActivo) return false;
 
-            // Aplicar Soft Delete
+            // 1. Aplicar Soft Delete atómico en SQL Server
             test.EstaActivo = false;
             await _context.SaveChangesAsync();
 
-            // Registrar la auditoría en MongoDB
-            await _auditoriaService.RegistrarEventoAsync(
-                usuarioId,
-                "ANULAR_TEST",
-                $"Se eliminó/anuló el test con ID: {testId}."
-            );
+            // 2. Construir la auditoría detallada según la estructura requerida
+            var log = new LogAuditoria
+            {
+                FechaEvento = DateTime.UtcNow,
+                Modulo = "TESTS",
+                Accion = "ANULACION_MASTER",
+                EntidadAfectadaId = testId.ToString(),
+                JwtUsuarioEjecutor = nombreUsuario,
+                RolAuth = rolAuth,
+                JustificacionCambio = justificacion,
+                DatosAnteriores = new { estado = "CREADO" },
+                DatosNuevos = new { estado = "ANULADO" }
+            };
+
+            // 3. Registrar en MongoDB en segundo plano (asíncrono, no bloquea al usuario)
+            _ = Task.Run(() => _auditoriaService.RegistrarEventoDetalladoAsync(log));
+
+            // 4. Invalidar caché en Redis
+            string cacheKey = $"tests_maestro_{test.MaestroId}";
+            await _cacheService.RemoveAsync(cacheKey);
 
             return true;
         }
 
         public async Task<List<TestDetalleResponseDto>> ObtenerTestsPorMaestroAsync(long maestroId)
+        {
+            string cacheKey = $"tests_maestro_{maestroId}";
+            var testsEnCache = await _cacheService.GetAsync<List<TestDetalleResponseDto>>(cacheKey);
+
+            if (testsEnCache != null)
             {
-            return await _context.TestsPersonalizados
+                return testsEnCache;
+            }
+
+            var testsDesdeDb = await _context.TestsPersonalizados
                 .Where(t => t.MaestroId == maestroId && t.EstaActivo)
                 .OrderByDescending(t => t.CreadoEn)
                 .Select(t => new TestDetalleResponseDto
@@ -213,10 +396,30 @@ namespace InkMath.AuthService.Services
                     TotalPreguntas = t.Preguntas.Count
                 })
                 .ToListAsync();
+
+            if (testsDesdeDb.Any())
+            {
+                await _cacheService.SetAsync(cacheKey, testsDesdeDb, TimeSpan.FromMinutes(10));
+            }
+
+            return testsDesdeDb;
         }
 
         public async Task<RespuestaPaginadaDto<TestDetalleResponseDto>> ObtenerTestsPaginadosPorMaestroAsync(long maestroId, ConsultaTestsPaginadaDto dto)
         {
+            string busquedaKey = string.IsNullOrWhiteSpace(dto.Busqueda) ? "all" : dto.Busqueda.Trim().ToLower();
+            string aulaKey = dto.AulaId.HasValue ? dto.AulaId.Value.ToString() : "all";
+            string fechaKey = dto.Fecha.HasValue ? dto.Fecha.Value.ToString("yyyyMMdd") : "all";
+            string cursorKey = $"{dto.UltimoId ?? 0}_{dto.UltimaFecha?.ToString("yyyyMMddHHmmss") ?? "0"}";
+
+            string cacheKey = $"tests_pag_m{maestroId}_lim{dto.Limite}_b{busquedaKey}_a{aulaKey}_f{fechaKey}_c{cursorKey}";
+
+            var resultadoCached = await _cacheService.GetAsync<RespuestaPaginadaDto<TestDetalleResponseDto>>(cacheKey);
+            if (resultadoCached != null)
+            {
+                return resultadoCached;
+            }
+
             int limite = Math.Min(dto.Limite, 50);
 
             // 1. Base Query con No Tracking
@@ -278,7 +481,7 @@ namespace InkMath.AuthService.Services
             var datosPaginados = tieneMasPaginas ? registros.Take(limite).ToList() : registros;
             var ultimoRegistro = datosPaginados.LastOrDefault();
 
-            return new RespuestaPaginadaDto<TestDetalleResponseDto>
+            var respuesta = new RespuestaPaginadaDto<TestDetalleResponseDto>
             {
                 Datos = datosPaginados,
                 SiguienteUltimoId = ultimoRegistro?.TestId,
@@ -287,6 +490,28 @@ namespace InkMath.AuthService.Services
                 TotalRegistros = totalRegistros,
                 TotalPaginas = (int)Math.Ceiling((double)totalRegistros / limite)
             };
+
+            await _cacheService.SetAsync(cacheKey, respuesta, TimeSpan.FromMinutes(5));
+
+            return respuesta;
+        }
+
+        public async Task<bool> CambiarEstadoPreguntaAsync(long testId, long preguntaId, bool estaActiva, long maestroId)
+        {
+            // 1. Validar que la pregunta exista y pertenezca al test y maestro indicado
+            var pregunta = await _context.PreguntasTest
+                .Include(p => p.Test)
+                .FirstOrDefaultAsync(p => p.Id == preguntaId && p.TestId == testId && p.Test.MaestroId == maestroId);
+
+            if (pregunta == null) return false;
+
+            // 2. Actualizar el estado de la pregunta (1 = activa, 0 = inactiva)
+            pregunta.EstaActiva = estaActiva;
+
+            // 3. Guardar cambios en SQL Server (Dispara el TRG_PreguntaTest_ControlTotal)
+            await _context.SaveChangesAsync();
+
+            return true;
         }
     }
 }
