@@ -52,4 +52,28 @@ namespace InkMath.AuthService.DTOs
         public int TotalNivelesCompletados { get; set; }
         public int TotalTestsRealizados { get; set; }
     }
+
+    public class AnalisisIndividualDto
+    {
+        public long EstudianteId { get; set; }
+        public string NombreCompleto { get; set; } = string.Empty;
+        public List<DetalleNivelEstudianteDto> NivelesProgreso { get; set; } = new();
+        public List<HistorialErrorDto> HistorialErrores { get; set; } = new();
+    }
+
+    public class DetalleNivelEstudianteDto
+    {
+        public long NivelId { get; set; }
+        public int Puntaje { get; set; }
+        public int Intentos { get; set; }
+        public long EstadoId { get; set; }
+    }
+
+    public class HistorialErrorDto
+    {
+        public long IntentoId { get; set; }
+        public long PreguntaId { get; set; }
+        public string? RespuestaDada { get; set; }
+        public DateTimeOffset Fecha { get; set; }
+    }
 }

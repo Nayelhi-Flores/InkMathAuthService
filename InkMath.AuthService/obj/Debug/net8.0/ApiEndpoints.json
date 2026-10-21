@@ -423,6 +423,22 @@
   },
   {
     "ContainingType": "InkMath.AuthService.Controllers.EvaluacionesController",
+    "Method": "ObtenerAnalisisIndividual",
+    "RelativePath": "api/Evaluaciones/estudiante/{estudianteId}/analisis",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "estudianteId",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.EvaluacionesController",
     "Method": "RegistrarResultado",
     "RelativePath": "api/Evaluaciones/resultados",
     "HttpMethod": "POST",

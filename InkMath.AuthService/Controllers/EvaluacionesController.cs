@@ -13,10 +13,12 @@ namespace InkMath.AuthService.Controllers
     public class EvaluacionesController : ControllerBase
     {
         private readonly IEvaluacionService _evaluacionService;
+        private readonly IReporteService _reporteService;
 
-        public EvaluacionesController(IEvaluacionService evaluacionService)
+        public EvaluacionesController(IEvaluacionService evaluacionService, IReporteService reporteService)
         {
             _evaluacionService = evaluacionService;
+            _reporteService = reporteService;
         }
 
         private bool TryObtenerEstudianteId(out long id) =>
@@ -59,6 +61,18 @@ namespace InkMath.AuthService.Controllers
                 return NotFound(new { mensaje = "El test solicitado no existe o no está activo." });
 
             return Ok(resultado);
+        }
+
+        [HttpGet("estudiante/{estudianteId}/analisis")]
+        public async Task<IActionResult> ObtenerAnalisisIndividual(long estudianteId)
+        {
+            var analisis = await _reporteService.ObtenerAnalisisIndividualAsync(estudianteId);
+            if (analisis == null)
+            {
+                return NotFound(new { message = "Estudiante no encontrado." });
+            }
+
+            return Ok(analisis);
         }
     }
 }

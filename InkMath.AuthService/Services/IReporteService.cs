@@ -10,6 +10,7 @@ namespace InkMath.AuthService.Services
         Task<List<ReporteTestDto>> ObtenerReporteTransaccionalAsync(FiltroReporteTestDto filtro);
         Task<List<RankingEstudianteDto>> ObtenerRankingAulaAsync(long aulaId);
         Task<ReporteGrupalAulaDto?> ObtenerReporteGrupalAulaAsync(long aulaId);
+        Task<AnalisisIndividualDto?> ObtenerAnalisisIndividualAsync(long estudianteId);
     }
 
     public class ReporteService : IReporteService
@@ -19,6 +20,52 @@ namespace InkMath.AuthService.Services
         public ReporteService(AplicationDbContext context)
         {
             _context = context;
+        }
+
+        public async Task<AnalisisIndividualDto?> ObtenerAnalisisIndividualAsync(long estudianteId)
+        {
+            var usuario = await _context.Usuarios
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == estudianteId && u.EstaActivo);
+
+            if (usuario == null) return null;
+
+            var niveles = await _context.ProgresosNivel
+                .AsNoTracking()
+                .Where(pn => pn.EstudianteId == estudianteId)
+                .Select(pn => new DetalleNivelEstudianteDto
+                {
+                    NivelId = pn.NivelId,
+                    Puntaje = pn.Puntaje,
+                    Intentos = pn.Intentos,
+                    EstadoId = pn.EstadoId
+                })
+                .ToListAsync();
+
+            // Obtener errores reales donde la opción seleccionada fue incorrecta (es_correcta = false)
+            var errores = await (from it in _context.IntentosTest
+                                 join re in _context.RespuestasEstudiante on it.Id equals re.IntentoId
+                                 join op in _context.OpcionesPregunta on re.OpcionId equals op.Id
+                                 where it.EstudianteId == estudianteId
+                                       && op.EsCorrecta == false // Solo errores reales en opciones de selección
+                                 orderby it.FechaFin descending
+                                 select new HistorialErrorDto
+                                 {
+                                     IntentoId = it.Id,
+                                     PreguntaId = re.PreguntaId,
+                                     RespuestaDada = op.TextoOpcion,
+                                     Fecha = it.FechaFin
+                                 })
+                                 .Take(20)
+                                 .ToListAsync();
+
+            return new AnalisisIndividualDto
+            {
+                EstudianteId = usuario.Id,
+                NombreCompleto = $"{usuario.Nombre} {usuario.Apellido}",
+                NivelesProgreso = niveles,
+                HistorialErrores = errores
+            };
         }
 
         public async Task<ReporteGrupalAulaDto?> ObtenerReporteGrupalAulaAsync(long aulaId)
