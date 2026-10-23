@@ -39,6 +39,7 @@ builder.Services.AddScoped<IEvaluacionService, EvaluacionService>();
 builder.Services.AddScoped<INivelService, NivelService>();
 builder.Services.AddScoped<ICacheService, RedisCacheService>();
 builder.Services.AddScoped<IReporteService, ReporteService>();
+builder.Services.AddScoped<IChatService, ChatService>();
 
 // Detrás de proxy (Cloudflare): IP real y esquema https
 builder.Services.Configure<ForwardedHeadersOptions>(o =>

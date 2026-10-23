@@ -24,6 +24,7 @@ namespace InkMath.AuthService.DTOs
         public bool AceptoTerminos { get; set; }
 
         public string? Website { get; set; }
+        public DateTimeOffset? FechaNacimiento { get; set; }
     }
 
     public class RegistroExpressDto

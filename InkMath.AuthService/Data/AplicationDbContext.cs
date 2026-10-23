@@ -1,5 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
-using InkMath.AuthService.Models;
+﻿using InkMath.AuthService.Models;
+using InkMath.AuthService.Models.InkMath.AuthService.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace InkMath.AuthService.Data
 {
@@ -20,6 +21,7 @@ namespace InkMath.AuthService.Data
         public DbSet<Suscripcion> Suscripciones { get; set; } = null!;
         public DbSet<Recurso> Recursos { get; set; }
         public DbSet<TestPersonalizado> TestsPersonalizados { get; set; }
+        public DbSet<InteraccionChat> InteraccionesChat { get; set; } = null!;
 
         // Referencia a las tablas de transacciones
         public DbSet<SaldoMoneda> SaldoMonedas { get; set; } = null!;

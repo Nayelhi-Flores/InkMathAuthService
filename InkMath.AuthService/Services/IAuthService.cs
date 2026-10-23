@@ -57,6 +57,7 @@ namespace InkMath.AuthService.Services
                 Email = dto.Email,
                 HashContrasena = passwordHash,
                 RoleId = dto.RoleId,
+                FechaNacimiento = dto.FechaNacimiento,
                 CreadoEn = DateTimeOffset.UtcNow
             };
 

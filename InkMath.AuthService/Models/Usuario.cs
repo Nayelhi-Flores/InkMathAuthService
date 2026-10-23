@@ -34,5 +34,19 @@ namespace InkMath.AuthService.Models
 
         [Column("esta_activo")]
         public bool EstaActivo { get; set; } = true;
+
+        [Column("fecha_nacimiento")]
+        public DateTimeOffset? FechaNacimiento { get; set; }
+
+        public bool EsPreprimaria()
+        {
+            if (!FechaNacimiento.HasValue) return false;
+
+            var edad = DateTimeOffset.UtcNow.Year - FechaNacimiento.Value.Year;
+            if (FechaNacimiento.Value.Date > DateTimeOffset.UtcNow.AddYears(-edad).Date) edad--;
+
+            // Rango típico de preprimaria: 4 a 6 años
+            return edad >= 4 && edad <= 6;
+        }
     }
 }

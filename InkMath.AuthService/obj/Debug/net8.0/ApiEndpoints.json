@@ -303,6 +303,11 @@
         "Name": "Website",
         "Type": "System.String",
         "IsRequired": false
+      },
+      {
+        "Name": "FechaNacimiento",
+        "Type": "System.Nullable\u00601[[System.DateTimeOffset, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -337,6 +342,122 @@
     "ContainingType": "CatalogosController",
     "Method": "ObtenerTiposPregunta",
     "RelativePath": "api/Catalogos/tipos-pregunta",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.ChatController",
+    "Method": "EliminarMensajePropio",
+    "RelativePath": "api/Chat/arrecife/{mensajeId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "mensajeId",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.ChatController",
+    "Method": "ReportarMensaje",
+    "RelativePath": "api/Chat/arrecife/{mensajeId}/reportar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "mensajeId",
+        "Type": "System.Int64",
+        "IsRequired": true
+      },
+      {
+        "Name": "dto",
+        "Type": "InkMath.AuthService.DTOs.ReportarMensajeDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.ChatController",
+    "Method": "VotarMensajeUtil",
+    "RelativePath": "api/Chat/arrecife/{mensajeId}/votar-util",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "mensajeId",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.ChatController",
+    "Method": "ObtenerMensajesAula",
+    "RelativePath": "api/Chat/arrecife/aula/{aulaId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "aulaId",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.ChatController",
+    "Method": "EnviarMensajeArrecife",
+    "RelativePath": "api/Chat/arrecife/enviar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "InkMath.AuthService.DTOs.EnviarInteraccionDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.ChatController",
+    "Method": "ModerarMensaje",
+    "RelativePath": "api/Chat/monitoreo/{mensajeId}/moderar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "mensajeId",
+        "Type": "System.Int64",
+        "IsRequired": true
+      },
+      {
+        "Name": "dto",
+        "Type": "InkMath.AuthService.DTOs.ModerarMensajeDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.ChatController",
+    "Method": "ObtenerMensajesReportados",
+    "RelativePath": "api/Chat/monitoreo/reportados",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
