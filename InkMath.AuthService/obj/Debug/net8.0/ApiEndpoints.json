@@ -628,6 +628,43 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "InkMath.AuthService.Controllers.JuegosController",
+    "Method": "Iniciar",
+    "RelativePath": "api/Juegos/{modo}/iniciar",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "modo",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.JuegosController",
+    "Method": "Resultado",
+    "RelativePath": "api/Juegos/{modo}/resultado",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "modo",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "req",
+        "Type": "InkMath.AuthService.DTOs.JuegoResultadoRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "InkMath.AuthService.Controllers.MonedasController",
     "Method": "MiSaldo",
     "RelativePath": "api/Monedas/mi-saldo",

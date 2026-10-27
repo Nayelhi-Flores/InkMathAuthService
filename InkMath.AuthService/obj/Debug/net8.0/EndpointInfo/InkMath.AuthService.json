@@ -1004,6 +1004,59 @@
         }
       }
     },
+    "/api/Juegos/{modo}/iniciar": {
+      "post": {
+        "tags": [
+          "Juegos"
+        ],
+        "parameters": [
+          {
+            "name": "modo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Juegos/{modo}/resultado": {
+      "post": {
+        "tags": [
+          "Juegos"
+        ],
+        "parameters": [
+          {
+            "name": "modo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JuegoResultadoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Monedas/mi-saldo": {
       "get": {
         "tags": [
@@ -1667,6 +1720,17 @@
             "format": "int64",
             "nullable": true
           }
+        },
+        "additionalProperties": false
+      },
+      "JuegoResultadoRequest": {
+        "type": "object",
+        "properties": {
+          "intentoToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "respuestas": { }
         },
         "additionalProperties": false
       },

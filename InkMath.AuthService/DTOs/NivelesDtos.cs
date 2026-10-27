@@ -11,6 +11,8 @@
         public long? TestId { get; set; } // Enlace al test
         public string Titulo { get; set; } = string.Empty;
         public string Categoria { get; set; } = string.Empty;
+        public string Seccion { get; set; } = string.Empty;
+        public int SeccionOrden { get; set; } = 9999;
         public int Orden { get; set; }
         public string Estado { get; set; } = "No Iniciado";
         public int Puntaje { get; set; }
