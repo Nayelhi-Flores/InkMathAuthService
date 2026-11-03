@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ...options,
             headers: { ...json, Accept: 'application/json', ...(options.headers || {}) }
         });
-        if (res.status === 401) { window.location.href = 'index.html'; throw new Error('401'); }
+        if (res.status === 401) { window.location.href = '/'; throw new Error('401'); }
         return res;
     }
     const mensajeDe = async (res, def) => (await res.json().catch(() => null))?.mensaje || def;
@@ -81,9 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="cell-ellipsis" title="${esc(r.referencia)}">${esc(r.tipoRecursoId === 1 ? r.referencia.split('/').pop() : r.referencia)}</td>
                 <td class="text-center">${r.creadoEn ? fmt(r.creadoEn) : '-'}</td>
                 <td class="text-center">
-                    <div class="action-buttons">
-                        <button class="btn-action view" data-ref="${esc(r.referencia)}" title="Abrir"><img src="icons/bx-eye.svg" alt="Abrir"></button>
-                    </div>
+                    <button class="btn-action view" data-ref="${esc(r.referencia)}" data-tipo="${r.tipoRecursoId}" data-titulo="${esc(r.titulo)}" title="Abrir">
+                        <img src="icons/bx-eye.svg" alt="Abrir">
+                    </button>
                 </td>
             </tr>`).join('');
     }
@@ -107,9 +107,44 @@ document.addEventListener('DOMContentLoaded', () => {
     selectAll.addEventListener('change', e => document.querySelectorAll('.recurso-checkbox').forEach(cb => cb.checked = e.target.checked));
     const seleccionados = () => [...document.querySelectorAll('.recurso-checkbox:checked')].map(cb => Number(cb.value));
 
+    // Variables para el modal de recursos
+    const modalRecursoPreview = $('modalRecursoPreview');
+    const visorDocumentoObj = $('visorDocumentoObj');
+    const btnAbrirRespaldo = $('btnAbrirRespaldo');
+    const btnDescargarDocumento = $('btnDescargarDocumento');
+    const previewRecursoTitulo = $('previewRecursoTitulo');
+
+    $('btnCerrarRecursoPreview')?.addEventListener('click', () => modalRecursoPreview.classList.remove('active'));
+    $('btnCerrarRecursoPreview2')?.addEventListener('click', () => modalRecursoPreview.classList.remove('active'));
+
     tbody.addEventListener('click', e => {
         const btn = e.target.closest('button[data-ref]');
-        if (btn) window.open(btn.dataset.ref, '_blank', 'noopener');
+        if (!btn) return;
+
+        const referencia = btn.dataset.ref;
+        const tipoId = Number(btn.dataset.tipo);
+
+        // Si es un enlace externo (2) o video de YouTube (3)
+        if (tipoId === 2 || tipoId === 3 || !referencia.startsWith('/uploads')) {
+            window.open(referencia, '_blank', 'noopener');
+            return;
+        }
+
+        // Para Documentos locales (Tipo 1: PDF / Imagen)
+        const urlAbsoluta = window.location.origin + referencia;
+        previewRecursoTitulo.textContent = `Vista Previa: ${btn.dataset.titulo || 'Documento'}`;
+
+        // Determinar tipo MIME aproximado
+        const esImagen = /\.(jpg|jpeg|png)$/i.test(referencia);
+        const mimeType = esImagen ? 'image/jpeg' : 'application/pdf';
+
+        // Asignar los atributos al visor y botones
+        visorDocumentoObj.setAttribute('data', urlAbsoluta);
+        visorDocumentoObj.setAttribute('type', mimeType);
+        btnDescargarDocumento.href = urlAbsoluta;
+        if (btnAbrirRespaldo) btnAbrirRespaldo.href = urlAbsoluta;
+
+        modalRecursoPreview.classList.add('active');
     });
 
     // ---------- Selector con datalist + chips ----------

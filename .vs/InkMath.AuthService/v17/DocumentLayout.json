@@ -3,28 +3,20 @@
   "WorkspaceRootPath": "C:\\Users\\Kathe\\source\\repos\\InkMath.AuthService\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{5B3DAA6F-1154-4567-B538-8602904EC6C8}|InkMath.AuthService\\InkMath.AuthService.csproj|c:\\users\\kathe\\source\\repos\\inkmath.authservice\\inkmath.authservice\\services\\inivelservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{5B3DAA6F-1154-4567-B538-8602904EC6C8}|InkMath.AuthService\\InkMath.AuthService.csproj|solutionrelative:inkmath.authservice\\services\\inivelservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{5B3DAA6F-1154-4567-B538-8602904EC6C8}|InkMath.AuthService\\InkMath.AuthService.csproj|c:\\users\\kathe\\source\\repos\\inkmath.authservice\\inkmath.authservice\\dtos\\nivelesdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{5B3DAA6F-1154-4567-B538-8602904EC6C8}|InkMath.AuthService\\InkMath.AuthService.csproj|solutionrelative:inkmath.authservice\\dtos\\nivelesdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{5B3DAA6F-1154-4567-B538-8602904EC6C8}|InkMath.AuthService\\InkMath.AuthService.csproj|c:\\users\\kathe\\source\\repos\\inkmath.authservice\\inkmath.authservice\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{5B3DAA6F-1154-4567-B538-8602904EC6C8}|InkMath.AuthService\\InkMath.AuthService.csproj|solutionrelative:inkmath.authservice\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{5B3DAA6F-1154-4567-B538-8602904EC6C8}|InkMath.AuthService\\InkMath.AuthService.csproj|c:\\users\\kathe\\source\\repos\\inkmath.authservice\\inkmath.authservice\\services\\ijuegoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{5B3DAA6F-1154-4567-B538-8602904EC6C8}|InkMath.AuthService\\InkMath.AuthService.csproj|solutionrelative:inkmath.authservice\\services\\ijuegoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{5B3DAA6F-1154-4567-B538-8602904EC6C8}|InkMath.AuthService\\InkMath.AuthService.csproj|c:\\users\\kathe\\source\\repos\\inkmath.authservice\\inkmath.authservice\\services\\iaulaservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5B3DAA6F-1154-4567-B538-8602904EC6C8}|InkMath.AuthService\\InkMath.AuthService.csproj|solutionrelative:inkmath.authservice\\services\\iaulaservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{5B3DAA6F-1154-4567-B538-8602904EC6C8}|InkMath.AuthService\\InkMath.AuthService.csproj|c:\\users\\kathe\\source\\repos\\inkmath.authservice\\inkmath.authservice\\controllers\\juegoscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{5B3DAA6F-1154-4567-B538-8602904EC6C8}|InkMath.AuthService\\InkMath.AuthService.csproj|solutionrelative:inkmath.authservice\\controllers\\juegoscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{5B3DAA6F-1154-4567-B538-8602904EC6C8}|InkMath.AuthService\\InkMath.AuthService.csproj|c:\\users\\kathe\\source\\repos\\inkmath.authservice\\inkmath.authservice\\services\\ireporteservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5B3DAA6F-1154-4567-B538-8602904EC6C8}|InkMath.AuthService\\InkMath.AuthService.csproj|solutionrelative:inkmath.authservice\\services\\ireporteservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{5B3DAA6F-1154-4567-B538-8602904EC6C8}|InkMath.AuthService\\InkMath.AuthService.csproj|c:\\users\\kathe\\source\\repos\\inkmath.authservice\\inkmath.authservice\\dtos\\juegodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{5B3DAA6F-1154-4567-B538-8602904EC6C8}|InkMath.AuthService\\InkMath.AuthService.csproj|solutionrelative:inkmath.authservice\\dtos\\juegodtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{5B3DAA6F-1154-4567-B538-8602904EC6C8}|InkMath.AuthService\\InkMath.AuthService.csproj|c:\\users\\kathe\\source\\repos\\inkmath.authservice\\inkmath.authservice\\models\\aulaestudiante.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{5B3DAA6F-1154-4567-B538-8602904EC6C8}|InkMath.AuthService\\InkMath.AuthService.csproj|solutionrelative:inkmath.authservice\\models\\aulaestudiante.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -39,79 +31,53 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "INivelService.cs",
-              "DocumentMoniker": "C:\\Users\\Kathe\\source\\repos\\InkMath.AuthService\\InkMath.AuthService\\Services\\INivelService.cs",
-              "RelativeDocumentMoniker": "InkMath.AuthService\\Services\\INivelService.cs",
-              "ToolTip": "C:\\Users\\Kathe\\source\\repos\\InkMath.AuthService\\InkMath.AuthService\\Services\\INivelService.cs",
-              "RelativeToolTip": "InkMath.AuthService\\Services\\INivelService.cs",
-              "ViewState": "AgIAABcAAAAAAAAAAAAIwDUAAAAFAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-27T04:01:30.999Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "NivelesDtos.cs",
-              "DocumentMoniker": "C:\\Users\\Kathe\\source\\repos\\InkMath.AuthService\\InkMath.AuthService\\DTOs\\NivelesDtos.cs",
-              "RelativeDocumentMoniker": "InkMath.AuthService\\DTOs\\NivelesDtos.cs",
-              "ToolTip": "C:\\Users\\Kathe\\source\\repos\\InkMath.AuthService\\InkMath.AuthService\\DTOs\\NivelesDtos.cs",
-              "RelativeToolTip": "InkMath.AuthService\\DTOs\\NivelesDtos.cs",
-              "ViewState": "AgIAAAcAAAAAAAAAAAAgwA4AAAA1AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-27T04:00:45.991Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\Kathe\\source\\repos\\InkMath.AuthService\\InkMath.AuthService\\Program.cs",
               "RelativeDocumentMoniker": "InkMath.AuthService\\Program.cs",
               "ToolTip": "C:\\Users\\Kathe\\source\\repos\\InkMath.AuthService\\InkMath.AuthService\\Program.cs",
               "RelativeToolTip": "InkMath.AuthService\\Program.cs",
-              "ViewState": "AgIAACQAAAAAAAAAAAAAACoAAAA6AAAAAAAAAA==",
+              "ViewState": "AgIAAKEAAAAAAAAAAAAQwK0AAAAiAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-27T03:11:30.755Z",
+              "WhenOpened": "2026-11-03T03:08:50.238Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "JuegosController.cs",
-              "DocumentMoniker": "C:\\Users\\Kathe\\source\\repos\\InkMath.AuthService\\InkMath.AuthService\\Controllers\\JuegosController.cs",
-              "RelativeDocumentMoniker": "InkMath.AuthService\\Controllers\\JuegosController.cs",
-              "ToolTip": "C:\\Users\\Kathe\\source\\repos\\InkMath.AuthService\\InkMath.AuthService\\Controllers\\JuegosController.cs",
-              "RelativeToolTip": "InkMath.AuthService\\Controllers\\JuegosController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAD0AAAABAAAAAAAAAA==",
+              "DocumentIndex": 1,
+              "Title": "IAulaService.cs",
+              "DocumentMoniker": "C:\\Users\\Kathe\\source\\repos\\InkMath.AuthService\\InkMath.AuthService\\Services\\IAulaService.cs",
+              "RelativeDocumentMoniker": "InkMath.AuthService\\Services\\IAulaService.cs",
+              "ToolTip": "C:\\Users\\Kathe\\source\\repos\\InkMath.AuthService\\InkMath.AuthService\\Services\\IAulaService.cs",
+              "RelativeToolTip": "InkMath.AuthService\\Services\\IAulaService.cs",
+              "ViewState": "AgIAAHkAAAAAAAAAAAAmwH8AAABJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-27T03:10:23.179Z",
+              "WhenOpened": "2026-11-03T02:59:33.315Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "JuegoDtos.cs",
-              "DocumentMoniker": "C:\\Users\\Kathe\\source\\repos\\InkMath.AuthService\\InkMath.AuthService\\DTOs\\JuegoDtos.cs",
-              "RelativeDocumentMoniker": "InkMath.AuthService\\DTOs\\JuegoDtos.cs",
-              "ToolTip": "C:\\Users\\Kathe\\source\\repos\\InkMath.AuthService\\InkMath.AuthService\\DTOs\\JuegoDtos.cs",
-              "RelativeToolTip": "InkMath.AuthService\\DTOs\\JuegoDtos.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAFAAAAAAAAAA==",
+              "DocumentIndex": 2,
+              "Title": "IReporteService.cs",
+              "DocumentMoniker": "C:\\Users\\Kathe\\source\\repos\\InkMath.AuthService\\InkMath.AuthService\\Services\\IReporteService.cs",
+              "RelativeDocumentMoniker": "InkMath.AuthService\\Services\\IReporteService.cs",
+              "ToolTip": "C:\\Users\\Kathe\\source\\repos\\InkMath.AuthService\\InkMath.AuthService\\Services\\IReporteService.cs",
+              "RelativeToolTip": "InkMath.AuthService\\Services\\IReporteService.cs",
+              "ViewState": "AgIAALgAAAAAAAAAAAAUwMIAAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-27T03:09:09.498Z",
+              "WhenOpened": "2026-11-02T23:51:13.783Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 3,
-              "Title": "IJuegoService.cs",
-              "DocumentMoniker": "C:\\Users\\Kathe\\source\\repos\\InkMath.AuthService\\InkMath.AuthService\\Services\\IJuegoService.cs",
-              "RelativeDocumentMoniker": "InkMath.AuthService\\Services\\IJuegoService.cs",
-              "ToolTip": "C:\\Users\\Kathe\\source\\repos\\InkMath.AuthService\\InkMath.AuthService\\Services\\IJuegoService.cs",
-              "RelativeToolTip": "InkMath.AuthService\\Services\\IJuegoService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAiAAAAAAAAAA==",
+              "Title": "AulaEstudiante.cs",
+              "DocumentMoniker": "C:\\Users\\Kathe\\source\\repos\\InkMath.AuthService\\InkMath.AuthService\\Models\\AulaEstudiante.cs",
+              "RelativeDocumentMoniker": "InkMath.AuthService\\Models\\AulaEstudiante.cs",
+              "ToolTip": "C:\\Users\\Kathe\\source\\repos\\InkMath.AuthService\\InkMath.AuthService\\Models\\AulaEstudiante.cs",
+              "RelativeToolTip": "InkMath.AuthService\\Models\\AulaEstudiante.cs",
+              "ViewState": "AgIAAAoAAAAAAAAAAAA1wBgAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-27T03:08:00.97Z",
+              "WhenOpened": "2026-11-02T23:02:07.152Z",
               "EditorCaption": ""
             }
           ]

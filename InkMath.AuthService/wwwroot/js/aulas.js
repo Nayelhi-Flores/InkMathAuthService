@@ -1,7 +1,7 @@
 ﻿document.addEventListener('DOMContentLoaded', () => {
-    const LIMITE = 5; // el backend limita a 5 por página
+    const LIMITE = 5;
     let pagina = 1, totalPaginas = 1, total = 0, hayMas = false;
-    let cursores = [null]; // cursores[i] = cursor para pedir la página i+1
+    let cursores = [null];
     let debounce;
 
     const $ = id => document.getElementById(id);
@@ -16,12 +16,11 @@
             ...options,
             headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(options.headers || {}) }
         });
-        if (res.status === 401) { window.location.href = 'index.html'; throw new Error('401'); }
+        if (res.status === 401) { window.location.href = '/'; throw new Error('401'); }
         return res;
     }
     const mensajeDe = async (res, def) => (await res.json().catch(() => null))?.mensaje || def;
 
-    // ---------- Carga con cursores ----------
     async function fetchPagina(cursor) {
         const p = new URLSearchParams({ Limite: LIMITE });
         const q = searchInput.value.trim();
@@ -54,7 +53,6 @@
     async function irAPagina(n) {
         n = Math.min(Math.max(1, n), totalPaginas);
         try {
-            // descubrir cursores intermedios si el destino aún no se conoce
             while (cursores.length < n) {
                 const ult = cursores.length;
                 const r = await fetchPagina(cursores[ult - 1]);
@@ -82,7 +80,7 @@
                 <td class="text-center">${a.totalTests ?? 0}</td>
                 <td class="text-center">
                     <div class="action-buttons">
-                        <button class="btn-action view" data-action="ver" data-id="${a.id}" title="Ver"><img src="icons/bx-eye.svg" alt="Ver"></button>
+                        <button class="btn-action view" data-action="ver" data-id="${a.id}" data-nombre="${esc(a.nombre)}" title="Ver"><img src="icons/bx-eye.svg" alt="Ver"></button>
                         <button class="btn-action edit" data-action="editar" data-id="${a.id}" data-nombre="${esc(a.nombre)}" title="Editar"><img src="icons/bx-edit.svg" alt="Editar"></button>
                     </div>
                 </td>
@@ -103,29 +101,201 @@
 
     $('btnPrevPage').addEventListener('click', () => { if (pagina > 1) { pagina--; cargar(); } });
     $('btnNextPage').addEventListener('click', () => { if (hayMas) { pagina++; cargar(); } });
-    $('btnFirstPage').addEventListener('click', () => irAPagina(1));
-    $('btnLastPage').addEventListener('click', () => irAPagina(totalPaginas));
-    $('pageSelect').addEventListener('change', e => irAPagina(Number(e.target.value)));
+    $('btnFirstPage').addEventListener('click', () => irAPaginas(1));
+    $('btnLastPage').addEventListener('click', () => irAPaginas(totalPaginas));
+    $('pageSelect').addEventListener('change', e => irAPaginas(Number(e.target.value)));
 
-    // ---------- Búsqueda en tiempo real (backend) ----------
     searchInput.addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(() => cargar(true), 300); });
     $('btnSearch').addEventListener('click', () => cargar(true));
 
-    // ---------- Selección y acciones por fila ----------
     selectAll.addEventListener('change', e => document.querySelectorAll('.aula-checkbox').forEach(cb => cb.checked = e.target.checked));
     const aulasSeleccionadas = () => [...document.querySelectorAll('.aula-checkbox:checked')].map(cb => Number(cb.value));
 
-    tbody.addEventListener('click', e => {
+    // Referencias para la vista de página tipo Dashboard
+    const vistaLista = $('vistaLista');
+    const vistaDashboard = $('vistaDashboard');
+    const bcListaAulas = $('bcListaAulas');
+    const bcSepAula = $('bcSepAula');
+    const bcDetalleAula = $('bcDetalleAula');
+
+    const dashboardAulaNombre = $('dashboardAulaNombre');
+    const dashboardAulaSub = $('dashboardAulaSub');
+    const statTotalAlumnos = $('statTotalAlumnos');
+    const statTotalTests = $('statTotalTests');
+    const statTotalRecursos = $('statTotalRecursos');
+    const tablaAlumnosDashboard = $('tablaAlumnosDashboard');
+    const listaTestsDashboard = $('listaTestsDashboard');
+    const listaRecursosDashboard = $('listaRecursosDashboard');
+
+    let alumnosGlobal = [];
+    let tieneTestsGlobal = false;
+
+    // Definición correcta de la función que faltaba
+    function renderTablaAlumnosPaginada() {
+        tablaAlumnosDashboard.innerHTML = alumnosGlobal.length ? alumnosGlobal.map(a => {
+            const badgeProgreso = (!tieneTestsGlobal || a.progreso === -1)
+                ? '<span class="badge" style="background: #F1F5F9; color: #64748B;">Sin tests asignados</span>'
+                : `<span class="badge badge-success">${a.progreso}%</span>`;
+
+            return `
+                <tr class="table-row-animated">
+                    <td><strong>${esc(a.nombre || a.Nombre)}</strong></td>
+                    <td>${esc(a.correo || a.Correo)}</td>
+                    <td class="text-center">${badgeProgreso}</td>
+                </tr>
+            `;
+        }).join('') : `<tr><td colspan="3" class="text-center" style="padding: 20px; color: #94A3B8;">No hay estudiantes inscritos en esta aula.</td></tr>`;
+    }
+
+    function mostrarDashboard(si, nombreAula = '') {
+        vistaLista.hidden = si;
+        vistaDashboard.hidden = !si;
+        if (bcSepAula) bcSepAula.hidden = !si;
+        if (bcDetalleAula) bcDetalleAula.hidden = !si;
+        if (bcListaAulas) {
+            bcListaAulas.classList.toggle('bc-muted', si);
+            bcListaAulas.classList.toggle('bc-active', !si);
+        }
+        if (si) {
+            dashboardAulaNombre.textContent = nombreAula ? `AULA: ${nombreAula.toUpperCase()}` : 'DASHBOARD DEL AULA';
+            window.scrollTo(0, 0);
+        }
+    }
+
+    if (bcListaAulas) {
+        bcListaAulas.addEventListener('click', () => {
+            if (!vistaDashboard.hidden) mostrarDashboard(false);
+        });
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('active');
+                b.style.color = '#64748B';
+                b.style.borderBottom = 'none';
+            });
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+
+            const tab = e.currentTarget;
+            tab.classList.add('active');
+            tab.style.color = '#6F4FB8';
+            tab.style.borderBottom = '2px solid #6F4FB8';
+            $(tab.dataset.tab).style.display = 'block';
+        });
+    });
+
+    tbody.addEventListener('click', async e => {
         const btn = e.target.closest('button[data-action]');
         if (!btn) return;
-        if (btn.dataset.action === 'ver') return alert('Vista de detalle del aula: pendiente de desarrollo.');
+
+        if (btn.dataset.action === 'ver') {
+            const aulaId = Number(btn.dataset.id);
+            const nombreAula = btn.dataset.nombre || 'Aula';
+
+            try {
+                const [resDashboard, resRanking, resRezago] = await Promise.all([
+                    api(`/api/Aulas/${aulaId}/dashboard`),
+                    api(`/api/Aulas/aula/${aulaId}/ranking`),
+                    api(`/api/Evaluaciones/maestro/mis-alertas/rezago`)
+                ]);
+
+                if (!resDashboard.ok) return alert(await mensajeDe(resDashboard, 'No se pudo cargar el dashboard del aula.'));
+
+                const data = await resDashboard.json();
+                const ranking = resRanking.ok ? await resRanking.json() : [];
+                const rezagos = resRezago.ok ? await resRezago.json() : [];
+
+                dashboardAulaSub.textContent = `Código de acceso: ${data.codigoAcceso || data.CodigoAcceso || 'N/A'}`;
+
+                const alumnos = data.alumnos || data.Alumnos || [];
+                const tests = data.tests || data.Tests || [];
+                const recursos = data.recursos || data.Recursos || [];
+
+                statTotalAlumnos.textContent = alumnos.length;
+                statTotalTests.textContent = tests.length;
+                statTotalRecursos.textContent = recursos.length;
+
+                tieneTestsGlobal = tests.length > 0;
+                alumnosGlobal = alumnos;
+                renderTablaAlumnosPaginada();
+
+                if (ranking && ranking.length) {
+                    podioRankingAula.innerHTML = ranking.slice(0, 3).map(r => {
+                        const colorFondo = r.posicion === 1 ? '#10B981' : (r.posicion === 2 ? '#6366F1' : '#F59E0B');
+                        const medalla = r.posicion === 1 ? '🥇 1st' : (r.posicion === 2 ? '🥈 2nd' : '🥉 3rd');
+                        return `
+                        <div style="background: ${colorFondo}; color: #FFF; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                            <div style="font-size: 28px; font-weight: 800; margin-bottom: 5px;">${r.puntajeAcumulado} pts</div>
+                            <div style="font-size: 15px; font-weight: 600; opacity: 0.95;">${esc(r.nombreCompleto)}</div>
+                            <div style="margin-top: 10px; font-size: 12px; background: rgba(255,255,255,0.25); padding: 4px 8px; border-radius: 20px; display: inline-block;">
+                                ${medalla} | Tests: ${r.puntajeTotalTests} | Niveles: ${r.puntajeTotalNiveles}
+                            </div>
+                        </div>
+                    `;
+                    }).join('');
+                } else {
+                    podioRankingAula.innerHTML = '<p style="color: #64748B; padding: 10px;">Aún no se registran puntajes en el ranking de esta aula.</p>';
+                }
+
+                const rezagosAula = rezagos.filter(alt => alt.aulaId === aulaId || !alt.aulaId);
+
+                if (!tieneTestsGlobal) {
+                    totalAlertasBadge.textContent = '0 Casos';
+                    tablaAlertasRezago.innerHTML = '<tr><td colspan="5" class="text-center" style="padding: 20px; color: #64748B;">Esta aula aún no cuenta con evaluaciones o tests asignados para evaluar rezagos.</td></tr>';
+                } else if (rezagosAula.length) {
+                    totalAlertasBadge.textContent = `${rezagosAula.length} Casos`;
+                    tablaAlertasRezago.innerHTML = rezagosAula.map(alt => `
+                        <tr class="table-row-animated">
+                            <td><strong>${esc(alt.nombreEstudiante)}</strong></td>
+                            <td>${esc(alt.nombreAula)}</td>
+                            <td class="text-center"><span class="badge" style="background: #FEF3C7; color: #D97706;">${alt.promedioGeneral}%</span></td>
+                            <td class="text-center">${alt.nivelesReprobados}</td>
+                            <td class="text-center">
+                                <span class="badge" style="background: #FEE2E2; color: #DC2626; font-weight: 700;">${esc(alt.nivelRiesgo)}</span>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    totalAlertasBadge.textContent = '0 Casos';
+                    tablaAlertasRezago.innerHTML = '<tr><td colspan="5" class="text-center" style="padding: 15px; color: #10B981;">No hay estudiantes con alertas de rezago en este momento.</td></tr>';
+                }
+
+                listaTestsDashboard.innerHTML = tests.length ? tests.map(t => `
+                    <div style="background: #F8FAFC; border: 1px solid #CBD5E1; padding: 12px 16px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${esc(t.nombre || t.Nombre)}</strong>
+                            <div style="font-size: 12px; color: #64748B;">Preguntas: ${t.totalPreguntas || t.TotalPreguntas || 0}</div>
+                        </div>
+                        <span class="badge badge-success">Asignado</span>
+                    </div>
+                `).join('') : `<p style="color: #94A3B8; text-align: center; padding: 20px;">No hay tests asignados a esta aula.</p>`;
+
+                listaRecursosDashboard.innerHTML = recursos.length ? recursos.map(r => `
+                    <div style="background: #F8FAFC; border: 1px solid #CBD5E1; padding: 12px 16px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${esc(r.titulo || r.Titulo)}</strong>
+                            <div style="font-size: 12px; color: #64748B;">Recurso Educativo</div>
+                        </div>
+                        <a href="${esc(r.referencia || r.Referencia)}" target="_blank" class="btn-secondary" style="padding: 6px 12px; font-size: 13px; text-decoration: none;">Abrir</a>
+                    </div>
+                `).join('') : `<p style="color: #94A3B8; text-align: center; padding: 20px;">No hay recursos compartidos en esta aula.</p>`;
+
+                mostrarDashboard(true, nombreAula);
+
+            } catch (err) {
+                console.error(err);
+                alert('Error de red al intentar obtener los datos del dashboard.');
+            }
+            return;
+        }
+
         modalTitle.textContent = 'Editar Aula';
         aulaIdInput.value = btn.dataset.id;
         nombreAulaInput.value = btn.dataset.nombre;
         aulaModal.classList.add('active');
     });
 
-    // ---------- Crear / editar ----------
     $('btnNuevaAula').addEventListener('click', () => {
         modalTitle.textContent = 'Nueva Aula';
         aulaIdInput.value = ''; nombreAulaInput.value = '';
@@ -145,7 +315,6 @@
         } catch (err) { console.error(err); alert('Error de red al guardar el aula.'); }
     });
 
-    // ---------- Eliminar por lote ----------
     $('btnEliminar').addEventListener('click', async () => {
         const ids = aulasSeleccionadas();
         if (!ids.length) return alert('Selecciona al menos un aula.');
@@ -156,7 +325,6 @@
         cargar(true);
     });
 
-    // ---------- Selector con datalist + chips ----------
     function crearSelector(inputEl, listEl, chipsEl, onChange) {
         let items = [];
         const sel = new Map();
@@ -187,7 +355,6 @@
         };
     }
 
-    // ---------- Asignación por lote (recursos / tests) ----------
     const modalAsignar = $('modalAsignar'), btnConfirmar = $('btnConfirmarAsignar');
     const selector = crearSelector($('asignarInput'), $('asignarDatalist'), $('asignarChips'), n => btnConfirmar.disabled = n === 0);
     let tipoAsignacion = null, aulasDestino = [];

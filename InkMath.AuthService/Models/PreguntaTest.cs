@@ -26,5 +26,8 @@ namespace InkMath.AuthService.Models
         public TestPersonalizado? Test { get; set; }
 
         public ICollection<OpcionPregunta> Opciones { get; set; } = new List<OpcionPregunta>();
+
+        [Column("contenido_visual", TypeName = "jsonb")]
+        public string? ContenidoVisual { get; set; }
     }
 }

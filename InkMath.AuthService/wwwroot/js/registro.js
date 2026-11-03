@@ -240,7 +240,7 @@
                 if (isExpress) {
                     window.location.href = 'juego.html';
                 } else {
-                    window.location.href = 'index.html';
+                    window.location.href = 'index';
                 }
             } else {
                 const errorData = await response.json().catch(() => null);

@@ -6,7 +6,7 @@
         headers: { ...(esForm ? {} : { 'Content-Type': 'application/json' }), ...(options.headers || {}) }
     });
     if (response.status === 401) {
-        window.location.href = '/index.html';
+        window.location.href = '/';
         throw new Error('Sesión no autorizada o expirada.');
     }
     return response;

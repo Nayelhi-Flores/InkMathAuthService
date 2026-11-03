@@ -18,6 +18,8 @@
         public long? MensajePadreId { get; set; }
         public int VotosUtiles { get; set; }
         public DateTimeOffset EnviadoEn { get; set; }
+        public bool EsMio { get; set; }
+        public bool YaVote { get; set; }
     }
 
     public class ReportarMensajeDto
@@ -42,5 +44,19 @@
         public bool EsEmoji { get; set; }
         public int VotosUtiles { get; set; }
         public DateTimeOffset EnviadoEn { get; set; }
+    }
+    public class AulaResumenArrecifeDto
+    {
+        public long Id { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+    }
+
+    public class PerfilArrecifeDto
+    {
+        public long UsuarioId { get; set; }
+        public bool EsPreprimaria { get; set; }
+        public List<string> Frases { get; set; } = new();
+        public List<string> Emojis { get; set; } = new();
+        public List<AulaResumenArrecifeDto> Aulas { get; set; } = new();
     }
 }

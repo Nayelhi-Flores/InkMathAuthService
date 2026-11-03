@@ -18,6 +18,7 @@ namespace InkMath.AuthService.Services
         Task<(bool Exito, string Mensaje)> AsignarTestsAAulasAsync(long maestroId, List<long> testIds, List<long> aulaIds);
         Task<RespuestaPaginadaDto<TestDetalleResponseDto>> ObtenerTestsPaginadosPorMaestroAsync(long maestroId, ConsultaTestsPaginadaDto dto);
         Task<List<TestDetalleResponseDto>> ObtenerTestsPorMaestroAsync(long maestroId);
+        Task<List<TestImpresionDto>> ObtenerDetalleTestsLoteAsync(long maestroId, List<long> testIds);
     }
 
     public class TestService : ITestService
@@ -512,6 +513,35 @@ namespace InkMath.AuthService.Services
             await _context.SaveChangesAsync();
 
             return true;
+        }
+
+        public async Task<List<TestImpresionDto>> ObtenerDetalleTestsLoteAsync(long maestroId, List<long> testIds)
+        {
+            if (testIds == null || !testIds.Any()) return new List<TestImpresionDto>();
+
+            var tests = await _context.TestsPersonalizados
+                .AsNoTracking()
+                .Where(t => testIds.Contains(t.Id) && t.MaestroId == maestroId && t.EstaActivo)
+                .Include(t => t.Preguntas.Where(p => p.EstaActiva))
+                .ThenInclude(p => p.Opciones)
+                .ToListAsync();
+
+            return tests.Select(t => new TestImpresionDto
+            {
+                TestId = t.Id,
+                Nombre = t.Nombre,
+                Preguntas = t.Preguntas.Select(p => new PreguntaImpresionDto
+                {
+                    PreguntaId = p.Id,
+                    Enunciado = p.Pregunta,
+                    TipoPreguntaId = p.TipoPreguntaId,
+                    Opciones = p.Opciones.Select(o => new OpcionImpresionDto
+                    {
+                        OpcionId = o.Id,
+                        TextoOpcion = o.TextoOpcion
+                    }).ToList()
+                }).ToList()
+            }).ToList();
         }
     }
 }

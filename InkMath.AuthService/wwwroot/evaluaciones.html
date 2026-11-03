@@ -66,6 +66,10 @@
                                     <img src="icons/bx-link.svg" alt="" class="btn-icon">
                                     <span>Asignar</span>
                                 </button>
+                                <button id="btnExportarPdfBloque" class="btn-secondary" style="border-color: #6F4FB8; color: #6F4FB8;">
+                                    <img src="icons/bx-folder.svg" alt="" class="btn-icon">
+                                    <span>Exportar</span>
+                                </button>
                                 <button id="btnEliminarBloque" class="btn-danger-outline">
                                     <img src="icons/bx-trash-alt.svg" alt="" class="btn-icon">
                                     <span>Eliminar</span>
@@ -167,6 +171,27 @@
             <div class="modal-actions">
                 <button type="button" class="btn-cancel" id="btnCancelarAsignacionAulas">Cancelar</button>
                 <button type="button" class="btn-primary" id="btnConfirmarAsignacionAulas" disabled>Confirmar Asignación</button>
+            </div>
+        </div>
+    </div>
+    <!-- MODAL VISTA PRELIMINAR DE EVALUACIÓN -->
+    <div id="modalVistaPreliminar" class="modal-overlay">
+        <div class="modal-card modal-card--wide" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #6F4FB8; padding-bottom: 10px; margin-bottom: 20px;">
+                <h2 id="previewTituloTest" style="margin: 0; color: #6F4FB8; font-size: 20px;">Vista Preliminar</h2>
+                <button type="button" class="btn-cancel" id="btnCerrarPreview" style="padding: 4px 12px;">✕</button>
+            </div>
+
+            <!-- Contenedor con el diseño impreso -->
+            <div id="previewContenidoImprimible" style="background: #FFF; padding: 20px; border: 1px solid #CBD5E1; border-radius: 6px;">
+                <!-- Se inyecta dinámicamente -->
+            </div>
+
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button type="button" class="btn-cancel" id="btnCerrarPreview2">Cerrar</button>
+                <button type="button" class="btn-primary" id="btnImprimirIndividual">
+                    <span>Imprimir / Exportar PDF</span>
+                </button>
             </div>
         </div>
     </div>

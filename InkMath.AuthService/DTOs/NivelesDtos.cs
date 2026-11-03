@@ -67,6 +67,7 @@
         public long PreguntaId { get; set; }
         public string Pregunta { get; set; } = string.Empty;
         public long TipoPreguntaId { get; set; }
+        public string? ContenidoVisual { get; set; }
         public List<OpcionDetalleDto> Opciones { get; set; } = new();
     }
 
@@ -74,5 +75,6 @@
     {
         public long OpcionId { get; set; }
         public string TextoOpcion { get; set; } = string.Empty;
+        public string? Icono { get; set; }
     }
 }

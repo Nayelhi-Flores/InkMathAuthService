@@ -386,6 +386,130 @@
         }
       }
     },
+    "/api/Aulas/{id}/dashboard": {
+      "get": {
+        "tags": [
+          "Aulas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Aulas/{aulaId}/salir": {
+      "delete": {
+        "tags": [
+          "Aulas"
+        ],
+        "parameters": [
+          {
+            "name": "aulaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Aulas/{aulaId}/tests": {
+      "get": {
+        "tags": [
+          "Aulas"
+        ],
+        "parameters": [
+          {
+            "name": "aulaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Aulas/{aulaId}/ranking-companeros": {
+      "get": {
+        "tags": [
+          "Aulas"
+        ],
+        "parameters": [
+          {
+            "name": "aulaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Aulas/{aulaId}/recursos/{recursoId}/archivo": {
+      "get": {
+        "tags": [
+          "Aulas"
+        ],
+        "parameters": [
+          {
+            "name": "aulaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "recursoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Auth/registro": {
       "post": {
         "tags": [
@@ -769,6 +893,18 @@
         }
       }
     },
+    "/api/Chat/arrecife/perfil": {
+      "get": {
+        "tags": [
+          "Chat"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Dashboard/top-maestros": {
       "get": {
         "tags": [
@@ -958,21 +1094,10 @@
         }
       }
     },
-    "/api/Evaluaciones/maestro/{maestroId}/rezago": {
+    "/api/Evaluaciones/maestro/mis-alertas/rezago": {
       "get": {
         "tags": [
           "Evaluaciones"
-        ],
-        "parameters": [
-          {
-            "name": "maestroId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
         ],
         "responses": {
           "200": {
@@ -1339,6 +1464,49 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Tests/detalle-lote": {
+      "post": {
+        "tags": [
+          "Tests"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int64"
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK"

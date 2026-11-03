@@ -21,5 +21,8 @@ namespace InkMath.AuthService.Models
 
         [ForeignKey(nameof(PreguntaId))]
         public PreguntaTest? Pregunta { get; set; }
+
+        [Column("icono")]
+        public string? Icono { get; set; }
     }
 }

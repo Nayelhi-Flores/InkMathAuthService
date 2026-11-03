@@ -2,6 +2,7 @@
 using InkMath.AuthService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace InkMath.AuthService.Controllers
@@ -47,7 +48,7 @@ namespace InkMath.AuthService.Controllers
                 return Unauthorized(new { mensaje = "Token inválido o expirado." });
 
             var mensajes = await _chatService.ObtenerMensajesAulaAsync(aulaId, usuarioId);
-
+            if (mensajes == null) return StatusCode(403, new { mensaje = "No tienes acceso a esta aula." });
             return Ok(mensajes);
         }
 
@@ -66,10 +67,16 @@ namespace InkMath.AuthService.Controllers
             long usuarioId = ObtenerUsuarioIdDesdeClaim();
             if (usuarioId == 0) return Unauthorized();
 
-            var (exito, mensaje) = await _chatService.VotarMensajeComoUtilAsync(usuarioId, mensajeId);
-            if (!exito) return BadRequest(new { mensaje });
-
-            return Ok(new { mensaje });
+            try
+            {
+                var (exito, mensaje) = await _chatService.VotarMensajeComoUtilAsync(usuarioId, mensajeId);
+                if (!exito) return BadRequest(new { mensaje });
+                return Ok(new { mensaje });
+            }
+            catch (DbUpdateException)
+            {
+                return Conflict(new { mensaje = "No se pudo registrar el voto. Inténtalo de nuevo." });
+            }
         }
 
         [HttpDelete("arrecife/{mensajeId:long}")]
@@ -125,6 +132,17 @@ namespace InkMath.AuthService.Controllers
             if (!exito) return BadRequest(new { mensaje });
 
             return Ok(new { mensaje });
+        }
+
+        [HttpGet("arrecife/perfil")]
+        [Authorize(Roles = "3")]
+        public async Task<IActionResult> ObtenerPerfilArrecife()
+        {
+            long estudianteId = ObtenerUsuarioIdDesdeClaim();
+            if (estudianteId == 0) return Unauthorized(new { mensaje = "Token inválido o expirado." });
+
+            var perfil = await _chatService.ObtenerPerfilArrecifeAsync(estudianteId);
+            return perfil == null ? NotFound(new { mensaje = "Estudiante no encontrado." }) : Ok(perfil);
         }
     }
 }

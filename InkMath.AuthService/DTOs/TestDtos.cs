@@ -90,4 +90,45 @@ namespace InkMath.AuthService.DTOs
         [Column("posicion_ranking")]
         public long PosicionRanking { get; set; }
     }
+
+    public class TestImpresionDto
+    {
+        public long TestId { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public List<PreguntaImpresionDto> Preguntas { get; set; } = new();
+    }
+
+    public class PreguntaImpresionDto
+    {
+        public long PreguntaId { get; set; }
+        public string Enunciado { get; set; } = string.Empty;
+        public long TipoPreguntaId { get; set; }
+        public List<OpcionImpresionDto> Opciones { get; set; } = new();
+    }
+
+    public class OpcionImpresionDto
+    {
+        public long OpcionId { get; set; }
+        public string TextoOpcion { get; set; } = string.Empty;
+    }
+
+    public class TestAulaEstudianteDto
+    {
+        public long TestId { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public int TotalPreguntas { get; set; }
+        public DateTime? DisponibleDesde { get; set; }
+        public DateTime? DisponibleHasta { get; set; }
+        public bool Disponible { get; set; }
+        public int MejorPuntaje { get; set; }
+        public int Intentos { get; set; }
+    }
+
+    public class RankingCompaneroDto
+    {
+        public int Posicion { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public int Puntaje { get; set; }
+        public bool EsMio { get; set; }
+    }
 }

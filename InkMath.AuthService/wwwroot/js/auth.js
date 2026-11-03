@@ -58,11 +58,11 @@
                 const rolId = Number(data.rolId);
 
                 if (rolId === 2) {
-                    window.location.href = 'aulas.html';
+                    window.location.href = 'aulas';
                 } else if (rolId === 3) {
                     window.location.href = 'juego.html';
                 } else if (rolId === 1) {
-                    window.location.href = 'admin.html';
+                    window.location.href = 'admin';
                 } else if (passwordError) {
                     passwordError.textContent = 'Rol de usuario no reconocido o sin asignación.';
                 }

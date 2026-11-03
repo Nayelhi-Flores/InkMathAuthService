@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Threading.RateLimiting;
@@ -116,6 +117,7 @@ builder.Services.AddRateLimiter(options =>
     };
     options.AddPolicy("LoginLimiter", ctx => PorIp(ctx, 5));
     options.AddPolicy("RegisterLimiter", ctx => PorIp(ctx, 3));
+    options.AddPolicy("VincularLimiter", ctx => PorIp(ctx, 15));
 });
 
 var app = builder.Build();
@@ -142,8 +144,46 @@ app.Use(async (ctx, next) =>
     await next();
 });
 
+var paginasProtegidas = new[] { "admin", "aulas", "configuracion", "evaluaciones", "formulario", "recursos", "registro" };
+
+// Middleware de URLs limpias y reescritura hacia wwwroot
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path.Value?.TrimStart('/').ToLower();
+
+    // Si el usuario entra a una ruta limpia (ej. /aulas)
+    if (!string.IsNullOrEmpty(path) && paginasProtegidas.Contains(path))
+    {
+        // Opcional: Validar si requiere sesión antes de mostrar el HTML
+        if (!context.Request.Cookies.ContainsKey("jwt_session") && path != "registro")
+        {
+            context.Response.Redirect("/");
+            return;
+        }
+
+        // Redirige internamente al archivo .html físico ocultando la extensión en el navegador
+        context.Request.Path = $"/{path}.html";
+    }
+
+    await next();
+});
+
 app.UseDefaultFiles();
-app.UseStaticFiles(new StaticFileOptions { ContentTypeProvider = provider });
+app.UseStaticFiles(); app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = provider
+}); 
+app.UseStaticFiles(new StaticFileOptions { 
+    ContentTypeProvider = provider,
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(builder.Environment.ContentRootPath, "Uploads")),
+    RequestPath = "/uploads",
+    OnPrepareResponse = ctx =>
+    {
+        // Cabeceras adicionales de caché o seguridad para archivos estáticos si lo requieres
+        ctx.Context.Response.Headers["Cache-Control"] = "no-cache";
+    }
+});
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();

@@ -16,7 +16,7 @@ namespace InkMath.AuthService.Services
         Task<(bool Exito, string Mensaje)> EliminarMensajePropioAsync(long estudianteId, string nombreEstudiante, string rolAuth, long mensajeId);
         Task<List<MensajeReportadoResponseDto>> ObtenerMensajesReportadosPorMaestroAsync(long maestroId);
         Task<(bool Exito, string Mensaje)> ModerarMensajeReportadoAsync(long maestroId, string nombreMaestro, string rolAuth, long mensajeId, ModerarMensajeDto dto);
-
+        Task<PerfilArrecifeDto?> ObtenerPerfilArrecifeAsync(long estudianteId);
     }
 
     public class ChatInvalidoException : Exception
@@ -59,6 +59,24 @@ namespace InkMath.AuthService.Services
             if (!perteneceAula)
                 return (false, "No perteneces a esta aula.", null);
 
+            var ultimo = await _context.InteraccionesChat.AsNoTracking()
+                        .Where(ic => ic.EstudianteId == estudianteId)
+                        .OrderByDescending(ic => ic.EnviadoEn)
+                        .Select(ic => (DateTimeOffset?)ic.EnviadoEn)
+                        .FirstOrDefaultAsync();
+            if (ultimo.HasValue && (DateTimeOffset.UtcNow - ultimo.Value).TotalSeconds < 5)
+                return (false, "Espera unos segundos antes de enviar otro mensaje.", null);
+
+            // Una respuesta debe apuntar a una pregunta existente, de la misma aula (no a otra respuesta)
+            if (dto.MensajePadreId.HasValue)
+            {
+                var padre = await _context.InteraccionesChat.AsNoTracking()
+                    .Where(ic => ic.Id == dto.MensajePadreId.Value)
+                    .Select(ic => new { ic.AulaId, ic.MensajePadreId, ic.EstaActivo })
+                    .FirstOrDefaultAsync();
+                if (padre == null || !padre.EstaActivo || padre.AulaId != dto.AulaId || padre.MensajePadreId != null)
+                    return (false, "La pregunta que quieres responder no está disponible.", null);
+            }
             // 3. Aplicar validación de Interacción Limitada por Edad (RF-35 - Preprimaria: 4 a 6 años)
             if (EsPreprimaria(estudiante.FechaNacimiento))
             {
@@ -106,31 +124,73 @@ namespace InkMath.AuthService.Services
                 EsEmoji = nuevaInteraccion.EsEmoji,
                 MensajePadreId = nuevaInteraccion.MensajePadreId,
                 VotosUtiles = 0,
-                EnviadoEn = nuevaInteraccion.EnviadoEn
+                EnviadoEn = nuevaInteraccion.EnviadoEn,
+                EsMio = true
             };
 
             return (true, "Mensaje enviado con éxito al Arrecife de Ayuda.", respuestaDto);
         }
 
-        public async Task<List<InteraccionResponseDto>> ObtenerMensajesAulaAsync(long aulaId, long usuarioId)
+        public async Task<List<InteraccionResponseDto>?> ObtenerMensajesAulaAsync(long aulaId, long usuarioId)
         {
-            return await _context.InteraccionesChat
-                .AsNoTracking()
-                .Where(ic => ic.AulaId == aulaId && ic.EstaActivo && !ic.EstaReportado)
+            bool esAlumno = await _context.AulaEstudiantes.AsNoTracking()
+                .AnyAsync(ae => ae.AulaId == aulaId && ae.EstudianteId == usuarioId);
+            bool esMaestro = !esAlumno && await _context.Aulas.AsNoTracking()
+                .AnyAsync(a => a.Id == aulaId && a.MaestroId == usuarioId);
+            if (!esAlumno && !esMaestro) return null;
+
+            var raices = await _context.InteraccionesChat.AsNoTracking()
+                .Where(ic => ic.AulaId == aulaId && ic.EstaActivo && !ic.EstaReportado && ic.MensajePadreId == null)
                 .OrderByDescending(ic => ic.EnviadoEn)
-                .Take(50)
-                .Select(ic => new InteraccionResponseDto
+                .Take(30)
+                .Select(ic => ic.Id)
+                .ToListAsync();
+
+            var mensajes = await _context.InteraccionesChat.AsNoTracking()
+                .Where(ic => ic.AulaId == aulaId && ic.EstaActivo && !ic.EstaReportado
+                             && (raices.Contains(ic.Id)
+                                 || (ic.MensajePadreId != null && raices.Contains(ic.MensajePadreId.Value))))
+                .OrderBy(ic => ic.EnviadoEn)
+                .Take(400)
+                .Select(ic => new
                 {
-                    Id = ic.Id,
-                    EstudianteId = ic.EstudianteId,
-                    NombreEstudiante = ic.Estudiante != null ? $"{ic.Estudiante.Nombre} {ic.Estudiante.Apellido}" : "Usuario",
-                    Contenido = ic.Contenido,
-                    EsEmoji = ic.EsEmoji,
-                    MensajePadreId = ic.MensajePadreId,
-                    VotosUtiles = ic.VotosUtiles,
-                    EnviadoEn = ic.EnviadoEn
+                    ic.Id,
+                    ic.EstudianteId,
+                    Nombre = ic.Estudiante != null ? ic.Estudiante.Nombre : "Usuario",
+                    Apellido = ic.Estudiante != null ? ic.Estudiante.Apellido : "",
+                    ic.Contenido,
+                    ic.EsEmoji,
+                    ic.MensajePadreId,
+                    ic.VotosUtiles,
+                    ic.EnviadoEn
                 })
                 .ToListAsync();
+
+            var ids = mensajes.Select(m => m.Id).ToList();
+            var votados = (await _context.VotosInteraccionChat.AsNoTracking()
+                .Where(v => v.UsuarioId == usuarioId && ids.Contains(v.MensajeId))
+                .Select(v => v.MensajeId)
+                .ToListAsync()).ToHashSet();
+
+            return mensajes.Select(m => new InteraccionResponseDto
+            {
+                Id = m.Id,
+                EstudianteId = m.EstudianteId,
+                NombreEstudiante = NombrePublico(m.Nombre, m.Apellido),
+                Contenido = m.Contenido,
+                EsEmoji = m.EsEmoji,
+                MensajePadreId = m.MensajePadreId,
+                VotosUtiles = m.VotosUtiles,
+                EnviadoEn = m.EnviadoEn,
+                EsMio = m.EstudianteId == usuarioId,
+                YaVote = votados.Contains(m.Id)
+            }).ToList();
+        }
+
+        private static string NombrePublico(string nombre, string apellido)
+        {
+            var inicial = string.IsNullOrWhiteSpace(apellido) ? "" : $" {char.ToUpperInvariant(apellido.Trim()[0])}.";
+            return $"{nombre}{inicial}";
         }
 
         private bool EsPreprimaria(DateTimeOffset? fechaNacimiento)
@@ -145,96 +205,105 @@ namespace InkMath.AuthService.Services
 
         public async Task<(bool Exito, string Mensaje)> VotarMensajeComoUtilAsync(long usuarioId, long mensajeId)
         {
+            const long Premio = 5;
+            const long TopeDiario = 50;
+
             var mensaje = await _context.InteraccionesChat
-                .Include(ic => ic.Estudiante)
                 .FirstOrDefaultAsync(ic => ic.Id == mensajeId && ic.EstaActivo);
+            if (mensaje == null) return (false, "El mensaje especificado no existe.");
+            if (mensaje.EstudianteId == usuarioId) return (false, "No puedes votar tu propio mensaje.");
+            if (mensaje.MensajePadreId == null) return (false, "Solo las respuestas se pueden marcar como útiles.");
 
-            if (mensaje == null)
-                return (false, "El mensaje especificado no existe.");
-
-            bool perteneceAula = await _context.AulaEstudiantes
-                .AsNoTracking()
+            bool perteneceAula = await _context.AulaEstudiantes.AsNoTracking()
                 .AnyAsync(ae => ae.AulaId == mensaje.AulaId && ae.EstudianteId == usuarioId);
-
-            var rolUsuario = await _context.Usuarios
-                .AsNoTracking()
-                .Where(u => u.Id == usuarioId)
-                .Select(u => u.RoleId)
-                .FirstOrDefaultAsync();
-
-            if (!perteneceAula && rolUsuario != 2)
+            bool esMaestroDelAula = !perteneceAula && await _context.Aulas.AsNoTracking()
+                .AnyAsync(a => a.Id == mensaje.AulaId && a.MaestroId == usuarioId);
+            if (!perteneceAula && !esMaestroDelAula)
                 return (false, "No tienes permisos para interactuar con este mensaje.");
 
-            // Clave única para identificar si este usuario ya votó por este mensaje específico
-            string idempotencyKey = $"ARRECIFE_UTIL_MSG_{mensaje.Id}_USER_{usuarioId}";
+            string key = $"ARRECIFE_UTIL_MSG_{mensajeId}_USER_{usuarioId}";
 
-            // Verificar si ya existe una transacción de recompensa previa (es decir, ya votó)
-            var transaccionExistente = await _context.TransaccionesMonedas
-                .FirstOrDefaultAsync(t => t.IdempotencyKey == idempotencyKey);
-
-            if (transaccionExistente != null)
+            await using var tx = await _context.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+            try
             {
-                // --- TOGGLE: QUITAR VOTO ---
-                mensaje.VotosUtiles = Math.Max(0, mensaje.VotosUtiles - 1);
+                var voto = await _context.VotosInteraccionChat
+                    .FirstOrDefaultAsync(v => v.MensajeId == mensajeId && v.UsuarioId == usuarioId);
 
-                // Si el autor del mensaje era un alumno distinto, le descontamos las monedas que se le habían otorgado
-                if (mensaje.EstudianteId != usuarioId)
+                if (voto != null)
                 {
-                    long monedasPremio = 5;
-                    var saldoEntity = await _context.SaldoMonedas
-                        .FirstOrDefaultAsync(s => s.EstudianteId == mensaje.EstudianteId);
+                    // Quitar voto (y devolver el premio si se había pagado)
+                    _context.VotosInteraccionChat.Remove(voto);
+                    mensaje.VotosUtiles = Math.Max(0, mensaje.VotosUtiles - 1);
 
-                    if (saldoEntity != null)
+                    var trans = await _context.TransaccionesMonedas.FirstOrDefaultAsync(t => t.IdempotencyKey == key);
+                    if (trans != null)
                     {
-                        saldoEntity.Saldo = Math.Max(0, saldoEntity.Saldo - monedasPremio);
-                        saldoEntity.ActualizadoEn = DateTimeOffset.UtcNow;
+                        var saldoAutor = await _context.SaldoMonedas
+                            .FirstOrDefaultAsync(s => s.EstudianteId == mensaje.EstudianteId);
+                        if (saldoAutor != null)
+                        {
+                            saldoAutor.Saldo = Math.Max(0, saldoAutor.Saldo - trans.Monto);
+                            saldoAutor.ActualizadoEn = DateTimeOffset.UtcNow;
+                        }
+                        _context.TransaccionesMonedas.Remove(trans);
                     }
 
-                    // Eliminamos la transacción anterior para liberar la clave de idempotencia
-                    _context.TransaccionesMonedas.Remove(transaccionExistente);
+                    await _context.SaveChangesAsync();
+                    await tx.CommitAsync();
+                    return (true, "Has quitado tu voto.");
                 }
 
-                await _context.SaveChangesAsync();
-                return (true, "Has quitado tu voto al mensaje.");
-            }
-            else
-            {
-                // --- DAR VOTO (NUEVO) ---
+                _context.VotosInteraccionChat.Add(new VotoInteraccionChat
+                {
+                    MensajeId = mensajeId,
+                    UsuarioId = usuarioId,
+                    CreadoEn = DateTimeOffset.UtcNow
+                });
                 mensaje.VotosUtiles += 1;
 
-                if (mensaje.EstudianteId != usuarioId)
-                {
-                    long monedasPremio = 5;
-                    var saldoEntity = await _context.SaldoMonedas
-                        .FirstOrDefaultAsync(s => s.EstudianteId == mensaje.EstudianteId);
+                // Premio al autor con tope diario (frena el intercambio de votos entre cuentas)
+                var inicioDia = new DateTimeOffset(DateTimeOffset.UtcNow.Date, TimeSpan.Zero);
+                long ganadoHoy = await _context.TransaccionesMonedas
+                    .Where(t => t.EstudianteId == mensaje.EstudianteId
+                                && t.IdempotencyKey.StartsWith("ARRECIFE_UTIL_")
+                                && t.CreadoEn >= inicioDia)
+                    .SumAsync(t => (long?)t.Monto) ?? 0;
+                long premio = Math.Max(0, Math.Min(Premio, TopeDiario - ganadoHoy));
 
+                if (premio > 0)
+                {
                     _context.TransaccionesMonedas.Add(new TransaccionMoneda
                     {
                         EstudianteId = mensaje.EstudianteId,
                         TipoTransaccionId = 1,
-                        Monto = monedasPremio,
-                        IdempotencyKey = idempotencyKey,
+                        Monto = premio,
+                        IdempotencyKey = key,
                         CreadoEn = DateTimeOffset.UtcNow
                     });
 
-                    if (saldoEntity == null)
-                    {
+                    var saldo = await _context.SaldoMonedas.FirstOrDefaultAsync(s => s.EstudianteId == mensaje.EstudianteId);
+                    if (saldo == null)
                         _context.SaldoMonedas.Add(new SaldoMoneda
                         {
                             EstudianteId = mensaje.EstudianteId,
-                            Saldo = monedasPremio,
+                            Saldo = premio,
                             ActualizadoEn = DateTimeOffset.UtcNow
                         });
-                    }
                     else
                     {
-                        saldoEntity.Saldo += monedasPremio;
-                        saldoEntity.ActualizadoEn = DateTimeOffset.UtcNow;
+                        saldo.Saldo += premio;
+                        saldo.ActualizadoEn = DateTimeOffset.UtcNow;
                     }
                 }
 
                 await _context.SaveChangesAsync();
-                return (true, "¡Mensaje marcado como útil! Se ha premiado al autor con monedas.");
+                await tx.CommitAsync();
+                return (true, premio > 0 ? "¡Marcado como útil! El autor ganó monedas." : "Marcado como útil.");
+            }
+            catch
+            {
+                await tx.RollbackAsync();
+                throw;
             }
         }
 
@@ -455,5 +524,30 @@ namespace InkMath.AuthService.Services
 
             return stringBuilder.ToString().Normalize(System.Text.NormalizationForm.FormC);
         }
+
+        public async Task<PerfilArrecifeDto?> ObtenerPerfilArrecifeAsync(long estudianteId)
+        {
+            var u = await _context.Usuarios.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == estudianteId && x.EstaActivo);
+            if (u == null) return null;
+
+            var aulas = await _context.AulaEstudiantes.AsNoTracking()
+                .Where(ae => ae.EstudianteId == estudianteId && ae.Aula.EstaActivo)
+                .Select(ae => new AulaResumenArrecifeDto { Id = ae.AulaId, Nombre = ae.Aula.Nombre })
+                .OrderBy(a => a.Nombre)
+                .ToListAsync();
+
+            bool pre = EsPreprimaria(u.FechaNacimiento);
+            return new PerfilArrecifeDto
+            {
+                UsuarioId = u.Id,
+                EsPreprimaria = pre,
+                Frases = pre ? FrasesPermitidas.ToList() : new(),
+                Emojis = pre ? EmojisPermitidos.ToList() : new(),
+                Aulas = aulas
+            };
+        }
+
+
     }
 }

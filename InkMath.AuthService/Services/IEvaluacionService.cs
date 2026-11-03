@@ -285,6 +285,24 @@ namespace InkMath.AuthService.Services
                 .FirstOrDefaultAsync(t => t.Id == testId && t.EstaActivo);
             if (test == null) return null;
 
+            bool esNivel = await _context.Niveles.AsNoTracking().AnyAsync(n => n.TestId == testId);
+            if (!esNivel)
+            {
+                bool asignado = await (from at in _context.AulaTests.AsNoTracking()
+                                       join ae in _context.AulaEstudiantes.AsNoTracking() on at.AulaId equals ae.AulaId
+                                       where at.TestId == testId && ae.EstudianteId == estudianteId
+                                             && _context.Aulas.Any(a => a.Id == at.AulaId)   // aula no eliminada
+                                       select 1).AnyAsync();
+                if (!asignado) return null;
+
+                var ahora = DateTime.UtcNow;
+                var hasta = test.FechaDisponibleHasta;
+                if (hasta.HasValue && hasta.Value.TimeOfDay == TimeSpan.Zero) hasta = hasta.Value.AddDays(1);
+                if ((test.FechaDisponibleDesde.HasValue && test.FechaDisponibleDesde.Value > ahora)
+                    || (hasta.HasValue && hasta.Value < ahora))
+                    return null;
+            }
+
             var preguntas = await _context.PreguntasTest
                 .Where(p => p.TestId == testId)
                 .OrderBy(p => EF.Functions.Random())
@@ -294,17 +312,21 @@ namespace InkMath.AuthService.Services
                     PreguntaId = p.Id,
                     Pregunta = p.Pregunta,
                     TipoPreguntaId = p.TipoPreguntaId,
+                    ContenidoVisual = p.ContenidoVisual,
                     Opciones = _context.OpcionesPregunta
                         .Where(o => o.PreguntaId == p.Id)
                         .Select(o => new OpcionDetalleDto
                         {
                             OpcionId = o.Id,
-                            TextoOpcion = o.TextoOpcion
+                            TextoOpcion = o.TextoOpcion,
+                            Icono = o.Icono
                             // EsCorrecta nunca se expone al cliente
                         })
                         .ToList()
                 })
                 .ToListAsync();
+                foreach (var p in preguntas)
+                    p.Opciones = p.Opciones.OrderBy(_ => Random.Shared.Next()).ToList();
 
             var ticket = IntentoTicket.Emitir(_ticketKey, new IntentoTicketPayload(
                 testId,

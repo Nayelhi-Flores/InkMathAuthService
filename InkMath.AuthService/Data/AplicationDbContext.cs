@@ -22,6 +22,7 @@ namespace InkMath.AuthService.Data
         public DbSet<Recurso> Recursos { get; set; }
         public DbSet<TestPersonalizado> TestsPersonalizados { get; set; }
         public DbSet<InteraccionChat> InteraccionesChat { get; set; } = null!;
+        public DbSet<VotoInteraccionChat> VotosInteraccionChat { get; set; }
 
         // Referencia a las tablas de transacciones
         public DbSet<SaldoMoneda> SaldoMonedas { get; set; } = null!;
@@ -64,6 +65,8 @@ namespace InkMath.AuthService.Data
             modelBuilder.Entity<Usuario>().HasQueryFilter(u => u.EstaActivo);
             //modelBuilder.Entity<Recurso>().HasQueryFilter(r => r.EstaActivo);
             //modelBuilder.Entity<Suscripcion>().HasQueryFilter(s => s.EstaActivo);
+
+            modelBuilder.Entity<AulaEstudiante>().HasQueryFilter(ae => ae.EstaActivo);
 
             // Llave primaria compuesta requerida para la tabla particionada transacciones_monedas
             modelBuilder.Entity<TransaccionMoneda>()

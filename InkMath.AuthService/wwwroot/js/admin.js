@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ...options,
             headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(options.headers || {}) }
         });
-        if (res.status === 401) { window.location.href = 'index.html'; throw new Error('401'); }
+        if (res.status === 401) { window.location.href = '/'; throw new Error('401'); }
         return res;
     }
 
@@ -343,12 +343,12 @@ document.addEventListener('DOMContentLoaded', () => {
     async function iniciar() {
         try {
             const res = await api('/api/Usuarios/me');
-            if (!res.ok) { window.location.href = 'index.html'; return; }
+            if (!res.ok) { window.location.href = '/'; return; }
             const me = await res.json();
             const esAdmin = Number(me.rolId) === 1 || /administrador/i.test(me.rolNombre || '');
             if (!esAdmin) {
                 $('accesoDenegado').hidden = false;
-                const destino = Number(me.rolId) === 3 ? 'juego.html' : 'aulas.html';
+                const destino = Number(me.rolId) === 3 ? 'juego.html' : 'aulas';
                 setTimeout(() => { window.location.href = destino; }, 3000);
                 return;
             }

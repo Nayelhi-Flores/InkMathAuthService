@@ -6,15 +6,15 @@ const SIDEBAR_STORAGE_KEY = 'sidebarColapsado';
 
 // fg = color del ícono/texto activo, bg = fondo de la "pill" activa (bottom nav móvil)
 const NAV_ITEMS = [
-    { href: 'aulas.html', icon: 'icons/bx-school.svg', label: 'Aulas', fg: '#D9534F', bg: '#FADADD' },
-    { href: 'evaluaciones.html', icon: 'icons/bx-rocket.svg', label: 'Evaluaciones', fg: '#6F4FB8', bg: '#E4DCF7' },
-    { href: 'recursos.html', icon: 'icons/bx-folder.svg', label: 'Recursos', fg: '#1A9BAB', bg: '#D2F1F4' },
-    { href: 'configuracion.html', icon: 'icons/bx-cog.svg', label: 'Configuración', fg: '#D98A1F', bg: '#FDECC8' },
+    { href: 'aulas', icon: 'icons/bx-school.svg', label: 'Aulas', fg: '#D9534F', bg: '#FADADD' },
+    { href: 'evaluaciones', icon: 'icons/bx-rocket.svg', label: 'Evaluaciones', fg: '#6F4FB8', bg: '#E4DCF7' },
+    { href: 'recursos', icon: 'icons/bx-folder.svg', label: 'Recursos', fg: '#1A9BAB', bg: '#D2F1F4' },
+    { href: 'configuracion', icon: 'icons/bx-cog.svg', label: 'Configuración', fg: '#D98A1F', bg: '#FDECC8' },
 ];
 
 // Navegación del panel de Administrador (body[data-nav="admin"]): el rol 1 no usa las pantallas de maestro.
 const ADMIN_NAV_ITEMS = [
-    { href: 'admin.html', icon: 'icons/bx-cog.svg', label: 'Panel Admin', fg: '#6F4FB8', bg: '#E4DCF7' },
+    { href: 'admin', icon: 'icons/bx-cog.svg', label: 'Panel Admin', fg: '#6F4FB8', bg: '#E4DCF7' },
 ];
 
 function getNavItems() {

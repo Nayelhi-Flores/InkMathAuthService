@@ -3,6 +3,7 @@ using InkMath.AuthService.Models;
 using InkMath.AuthService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
@@ -188,6 +189,7 @@ namespace InkMath.AuthService.Controllers
         }
 
         [HttpPost("vincular")]
+        [EnableRateLimiting("VincularLimiter")]
         [Authorize(Roles ="3")] // Estudiante
         public async Task<IActionResult> VincularAlumno([FromBody] VincularAlumnoDto dto)
         {
@@ -240,19 +242,23 @@ namespace InkMath.AuthService.Controllers
 
             return long.TryParse(claimId, out long usuarioId) ? usuarioId : 0;
         }
+        private async Task<bool> PuedeVerReportesAsync(long aulaId) =>
+            User.IsInRole("1") || await _aulaService.EsMaestroDelAulaAsync(aulaId, ObtenerUsuarioIdDesdeClaim());
 
         [HttpGet("aula/{aulaId}/ranking")]
-        [Authorize]
+        [Authorize(Roles = "1,2")]
         public async Task<IActionResult> ObtenerRankingAula(long aulaId)
         {
+            if (!await PuedeVerReportesAsync(aulaId)) return Forbid();
             var ranking = await _reporteService.ObtenerRankingAulaAsync(aulaId);
             return Ok(ranking);
         }
 
         [HttpGet("aula/{aulaId}/grupal")]
-        [Authorize]
+        [Authorize(Roles = "1,2")]
         public async Task<IActionResult> ObtenerReporteGrupal(long aulaId)
         {
+            if (!await PuedeVerReportesAsync(aulaId)) return Forbid();
             var reporte = await _reporteService.ObtenerReporteGrupalAulaAsync(aulaId);
             if (reporte == null)
             {
@@ -260,6 +266,88 @@ namespace InkMath.AuthService.Controllers
             }
 
             return Ok(reporte);
+        }
+
+        [HttpGet("{id:long}/dashboard")]
+        [Authorize(Roles = "2")] // Exclusivo para Maestros
+        public async Task<IActionResult> ObtenerDashboardAula(long id)
+        {
+            long maestroId = ObtenerUsuarioIdDesdeClaim();
+            if (maestroId == 0)
+                return Unauthorized(new { mensaje = "Token inválido o expirado." });
+
+            var dashboard = await _aulaService.ObtenerDashboardAulaAsync(id, maestroId);
+
+            if (dashboard == null)
+                return NotFound(new { mensaje = "El aula no fue encontrada o no le pertenece." });
+
+            return Ok(dashboard);
+        }
+
+        [HttpDelete("{aulaId:long}/salir")]
+        [Authorize(Roles = "3")]
+        public async Task<IActionResult> SalirDeAula(long aulaId)
+        {
+            long estudianteId = ObtenerUsuarioIdDesdeClaim();
+            if (estudianteId == 0) return Unauthorized(new { mensaje = "Token inválido o expirado." });
+
+            var (exito, mensaje) = await _aulaService.SalirDeAulaAsync(estudianteId, aulaId);
+            return exito ? Ok(new { mensaje }) : BadRequest(new { mensaje });
+        }
+
+        [HttpGet("{aulaId:long}/tests")]
+        [Authorize(Roles = "3")]
+        public async Task<IActionResult> ObtenerTestsDeAula(long aulaId)
+        {
+            long estudianteId = ObtenerUsuarioIdDesdeClaim();
+            if (estudianteId == 0) return Unauthorized(new { mensaje = "Token inválido o expirado." });
+
+            var tests = await _aulaService.ObtenerTestsDeAulaParaEstudianteAsync(aulaId, estudianteId);
+            if (tests == null) return StatusCode(403, new { mensaje = "No perteneces a esta aula." });
+            return Ok(tests);
+        }
+
+        [HttpGet("{aulaId:long}/ranking-companeros")]
+        [Authorize(Roles = "3")]
+        public async Task<IActionResult> ObtenerRankingCompaneros(long aulaId)
+        {
+            long estudianteId = ObtenerUsuarioIdDesdeClaim();
+            if (estudianteId == 0) return Unauthorized(new { mensaje = "Token inválido o expirado." });
+
+            var ranking = await _reporteService.ObtenerRankingCompanerosAsync(aulaId, estudianteId);
+            if (ranking == null) return StatusCode(403, new { mensaje = "No perteneces a esta aula." });
+            return Ok(ranking);
+        }
+
+        // Los documentos NO se sirven como archivos públicos: solo quien pertenece al aula puede abrirlos
+        [HttpGet("{aulaId:long}/recursos/{recursoId:long}/archivo")]
+        [Authorize(Roles = "2,3")]
+        public async Task<IActionResult> AbrirDocumentoDeAula(long aulaId, long recursoId, [FromServices] IWebHostEnvironment env)
+        {
+            long usuarioId = ObtenerUsuarioIdDesdeClaim();
+            if (usuarioId == 0) return Unauthorized();
+
+            string rolId = User.FindFirst(ClaimTypes.Role)?.Value ?? User.FindFirst("role")?.Value ?? string.Empty;
+
+            // Ya valida que el usuario pertenezca al aula
+            var recursos = await _aulaService.ObtenerRecursosPorAulaAsync(aulaId, usuarioId, rolId);
+            var recurso = recursos.FirstOrDefault(r => r.Id == recursoId && r.TipoRecursoId == 1);
+            if (recurso == null) return NotFound();
+
+            var nombre = Path.GetFileName(recurso.Referencia);   // evita rutas relativas (../)
+            var ruta = Path.Combine(env.ContentRootPath, "Uploads", "Recursos", nombre);
+            if (!System.IO.File.Exists(ruta)) return NotFound();
+
+            string? tipo = Path.GetExtension(nombre).ToLowerInvariant() switch
+            {
+                ".pdf" => "application/pdf",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                _ => null
+            };
+            if (tipo == null) return NotFound();
+
+            return PhysicalFile(ruta, tipo);
         }
     }
 }

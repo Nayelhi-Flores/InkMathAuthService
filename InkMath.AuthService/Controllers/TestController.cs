@@ -150,5 +150,24 @@ namespace InkMath.AuthService.Controllers
             var resultado = await _testService.ObtenerTestsPaginadosPorMaestroAsync(maestroId, dto);
             return Ok(resultado);
         }
+
+        [HttpPost("detalle-lote")]
+        [Authorize(Roles = "1,2")]
+        public async Task<IActionResult> ObtenerDetalleTestsLote([FromBody] List<long> testIds)
+        {
+            if (testIds == null || !testIds.Any())
+                return BadRequest(new { mensaje = "Debe proporcionar al menos un ID de test." });
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!long.TryParse(userIdClaim, out long maestroId))
+                return Unauthorized(new { mensaje = "Usuario no válido." });
+
+            var resultado = await _testService.ObtenerDetalleTestsLoteAsync(maestroId, testIds);
+
+            if (!resultado.Any())
+                return NotFound(new { mensaje = "No se encontraron los tests especificados o no le pertenecen." });
+
+            return Ok(resultado);
+        }
     }
 }

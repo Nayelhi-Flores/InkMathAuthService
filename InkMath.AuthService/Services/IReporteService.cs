@@ -14,11 +14,47 @@ namespace InkMath.AuthService.Services
         Task<AnalisisIndividualDto?> ObtenerAnalisisIndividualAsync(long estudianteId);
         Task<List<AlertaRezagoDto>> ObtenerAlertasRezagoPorMaestroAsync(long maestroId);
         Task<byte[]> ExportarReporteAulaCsvAsync(long aulaId);
+        Task<List<RankingCompaneroDto>?> ObtenerRankingCompanerosAsync(long aulaId, long estudianteId);
     }
 
     public class ReporteService : IReporteService
     {
         private readonly AplicationDbContext _context;
+        private const string RankingSql = @"
+            WITH miembros AS (
+                SELECT u.id, u.nombre, u.apellido
+                FROM usuarios u
+                JOIN aula_estudiante ae ON ae.estudiante_id = u.id
+                WHERE ae.aula_id = {0} AND ae.esta_activo = TRUE AND u.esta_activo = TRUE
+            ),
+            niveles AS (
+                SELECT pn.estudiante_id, SUM(pn.puntaje) AS puntos
+                FROM progreso_nivel pn
+                WHERE pn.estudiante_id IN (SELECT id FROM miembros)
+                GROUP BY pn.estudiante_id
+            ),
+            tests AS (
+                SELECT mejor.estudiante_id, SUM(mejor.puntaje) AS puntos
+                FROM (
+                    SELECT it.estudiante_id, it.test_id, MAX(it.puntaje_obtenido) AS puntaje
+                    FROM intentos_test it
+                    JOIN aula_tests at ON at.test_id = it.test_id AND at.aula_id = {0}
+                    WHERE it.estudiante_id IN (SELECT id FROM miembros)
+                    GROUP BY it.estudiante_id, it.test_id
+                ) mejor
+                GROUP BY mejor.estudiante_id
+            )
+            SELECT m.id AS EstudianteId,
+                   m.nombre AS Nombre,
+                   m.apellido AS Apellido,
+                   COALESCE(n.puntos, 0)::int AS PuntajeNiveles,
+                   COALESCE(t.puntos, 0)::int AS PuntajeTests,
+                   (COALESCE(n.puntos, 0) + COALESCE(t.puntos, 0))::int AS PuntajeTotal,
+                   RANK() OVER (ORDER BY COALESCE(n.puntos, 0) + COALESCE(t.puntos, 0) DESC)::int AS Posicion
+            FROM miembros m
+            LEFT JOIN niveles n ON n.estudiante_id = m.id
+            LEFT JOIN tests t ON t.estudiante_id = m.id
+            ORDER BY PuntajeTotal DESC, m.id;";
 
         public ReporteService(AplicationDbContext context)
         {
@@ -56,7 +92,7 @@ namespace InkMath.AuthService.Services
                 JOIN aula_estudiante ae ON ae.aula_id = a.id
                 JOIN usuarios u ON u.id = ae.estudiante_id
                 LEFT JOIN progreso_nivel pn ON pn.estudiante_id = ae.estudiante_id
-                WHERE a.maestro_id = {0} AND a.esta_activo = TRUE AND u.esta_activo = TRUE
+                WHERE a.maestro_id = {0} AND a.esta_activo = TRUE AND u.esta_activo = TRUE AND ae.esta_activo = TRUE
                 GROUP BY ae.estudiante_id, ae.aula_id, a.nombre, u.nombre, u.apellido
             )
             SELECT 
@@ -135,7 +171,7 @@ namespace InkMath.AuthService.Services
                     COUNT(DISTINCT CASE WHEN pn.estado_id = 3 THEN pn.nivel_id END) AS niveles_completados
                 FROM aula_estudiante ae
                 JOIN progreso_nivel pn ON pn.estudiante_id = ae.estudiante_id
-                WHERE ae.aula_id = {0}
+                WHERE ae.aula_id = {0} AND ae.esta_activo = TRUE
                 GROUP BY ae.aula_id
             ),
             resumen_tests AS (
@@ -151,7 +187,7 @@ namespace InkMath.AuthService.Services
             SELECT 
                 a.id AS AulaId,
                 a.nombre AS NombreAula,
-                (SELECT COUNT(*) FROM aula_estudiante ae WHERE ae.aula_id = a.id) AS TotalEstudiantes,
+                (SELECT COUNT(*) FROM aula_estudiante ae WHERE ae.aula_id = a.id AND ae.esta_activo = TRUE) AS TotalEstudiantes,
                 COALESCE(rn.promedio_niveles, 0) AS PromedioGeneralNiveles,
                 COALESCE(rt.promedio_tests, 0) AS PromedioGeneralTests,
                 COALESCE(rn.niveles_completados, 0) AS TotalNivelesCompletados,
@@ -185,25 +221,16 @@ namespace InkMath.AuthService.Services
 
         public async Task<List<RankingEstudianteDto>> ObtenerRankingAulaAsync(long aulaId)
         {
-            var sql = @"
-            SELECT 
-                u.id AS EstudianteId,
-                CONCAT(u.nombre, ' ', u.apellido) AS NombreCompleto,
-                COALESCE(SUM(DISTINCT pn.puntaje), 0) AS PuntajeTotalNiveles,
-                COALESCE(SUM(DISTINCT it.puntaje_obtenido), 0) AS PuntajeTotalTests,
-                (COALESCE(SUM(DISTINCT pn.puntaje), 0) + COALESCE(SUM(DISTINCT it.puntaje_obtenido), 0)) AS PuntajeAcumulado,
-                RANK() OVER (ORDER BY (COALESCE(SUM(DISTINCT pn.puntaje), 0) + COALESCE(SUM(DISTINCT it.puntaje_obtenido), 0)) DESC) AS Posicion
-            FROM usuarios u
-            JOIN aula_estudiante ae ON ae.estudiante_id = u.id
-            LEFT JOIN progreso_nivel pn ON pn.estudiante_id = u.id
-            LEFT JOIN intentos_test it ON it.estudiante_id = u.id
-            WHERE ae.aula_id = {0} AND u.esta_activo = TRUE
-            GROUP BY u.id, u.nombre, u.apellido
-            ORDER BY PuntajeAcumulado DESC, u.id ASC;";
-
-            return await _context.Database
-                .SqlQueryRaw<RankingEstudianteDto>(sql, aulaId)
-                .ToListAsync();
+            var filas = await _context.Database.SqlQueryRaw<RankingFilaDto>(RankingSql, aulaId).ToListAsync();
+            return filas.Select(f => new RankingEstudianteDto
+            {
+                EstudianteId = f.EstudianteId,
+                NombreCompleto = $"{f.Nombre} {f.Apellido}",
+                PuntajeTotalNiveles = f.PuntajeNiveles,
+                PuntajeTotalTests = f.PuntajeTests,
+                PuntajeAcumulado = f.PuntajeTotal,
+                Posicion = f.Posicion
+            }).ToList();
         }
 
         public async Task<List<ReporteTestDto>> ObtenerReporteTransaccionalAsync(FiltroReporteTestDto filtro)
@@ -250,6 +277,31 @@ namespace InkMath.AuthService.Services
                     TotalPreguntas = x.t.TotalPreguntas
                 })
                 .ToListAsync();
+        }
+
+        public async Task<List<RankingCompaneroDto>?> ObtenerRankingCompanerosAsync(long aulaId, long estudianteId)
+        {
+            bool pertenece = await _context.AulaEstudiantes.AsNoTracking()
+                .AnyAsync(ae => ae.AulaId == aulaId && ae.EstudianteId == estudianteId);
+            if (!pertenece) return null;
+
+            var filas = await _context.Database.SqlQueryRaw<RankingFilaDto>(RankingSql, aulaId).ToListAsync();
+
+            RankingCompaneroDto Mapear(RankingFilaDto f) => new()
+            {
+                Posicion = f.Posicion,
+                Nombre = string.IsNullOrWhiteSpace(f.Apellido) ? f.Nombre : $"{f.Nombre} {char.ToUpperInvariant(f.Apellido.Trim()[0])}.",
+                Puntaje = f.PuntajeTotal,
+                EsMio = f.EstudianteId == estudianteId
+            };
+
+            var top = filas.Take(10).Select(Mapear).ToList();
+            if (!top.Any(r => r.EsMio))
+            {
+                var mia = filas.FirstOrDefault(f => f.EstudianteId == estudianteId);
+                if (mia != null) top.Add(Mapear(mia));
+            }
+            return top;
         }
     }
 }

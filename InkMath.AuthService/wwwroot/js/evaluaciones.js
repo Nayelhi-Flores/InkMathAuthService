@@ -3,6 +3,7 @@
     let pagina = 1, totalPaginas = 1, total = 0, hayMas = false;
     let cursores = [null];
     let debounce, aulas = [];
+    let testActualPreview = null;
 
     const $ = id => document.getElementById(id);
     const tbody = $('testsTableBody'), searchInput = $('searchInput'), selectAll = $('selectAllCheckbox');
@@ -17,7 +18,7 @@
             ...options,
             headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(options.headers || {}) }
         });
-        if (res.status === 401) { window.location.href = 'index.html'; throw new Error('401'); }
+        if (res.status === 401) { window.location.href = 'index'; throw new Error('401'); }
         return res;
     }
     const mensajeDe = async (res, def) => (await res.json().catch(() => null))?.mensaje || def;
@@ -147,12 +148,158 @@
         cargar(true);
     }
 
-    tbody.addEventListener('click', e => {
+    // ---------- Vista Preliminar (Botón "Ver" de cada fila) ----------
+    tbody.addEventListener('click', async e => {
         const btn = e.target.closest('button[data-action]');
         if (!btn) return;
-        if (btn.dataset.action === 'ver') return alert('Vista de detalle del test: pendiente de desarrollo.');
-        if (confirm('¿Eliminar este test?')) eliminarTests([Number(btn.dataset.id)]);
+
+        const action = btn.dataset.action;
+        const testId = Number(btn.dataset.id);
+
+        if (action === 'ver') {
+            try {
+                // Reutilizamos el endpoint por lote enviando un solo ID para obtener su estructura completa
+                const res = await api('/api/Tests/detalle-lote', {
+                    method: 'POST',
+                    body: JSON.stringify([testId])
+                });
+
+                if (!res.ok) return alert(await mensajeDe(res, 'No se pudo cargar la vista preliminar del test.'));
+                const data = await res.json();
+
+                if (!data.length) return alert('No se encontró información para este test.');
+                testActualPreview = data[0];
+
+                // Renderizar la vista previa dentro del modal
+                const contenedor = $('previewContenidoImprimible');
+                $('previewTituloTest').textContent = `Vista Preliminar: ${testActualPreview.nombre || testActualPreview.Nombre}`;
+
+                const preguntasList = testActualPreview.preguntas || testActualPreview.Preguntas || [];
+
+                contenedor.innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0; color: #1E293B;">INKMATH - PLATAFORMA EDUCATIVA</h3>
+                    <p style="margin: 5px 0 0; color: #64748B; font-size: 13px;">Evaluación: <strong>${esc(testActualPreview.nombre || testActualPreview.Nombre)}</strong></p>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 13px; border: 1px solid #CBD5E1; padding: 8px 12px; border-radius: 4px;">
+                    <span><strong>Estudiante:</strong> _________________________________________</span>
+                    <span><strong>Fecha:</strong> ____/____/2026</span>
+                </div>
+                <div style="font-style: italic; font-size: 12px; margin-bottom: 15px; color: #475569; background: #F8FAFC; padding: 6px 10px; border-left: 3px solid #6F4FB8;">
+                    Instrucciones: Lee atentamente cada enunciado y marca con una "X" o escribe la respuesta correcta.
+                </div>
+                <div>
+                    ${preguntasList.map((p, idx) => {
+                        const tipo = Number(p.tipoPreguntaId || p.TipoPreguntaId);
+                        const opciones = p.opciones || p.Opciones || [];
+
+                        // Si es tipo 3 (Respuesta abierta), mostramos líneas de escritura en lugar de opciones
+                        if (tipo === 3) {
+                            return `
+                                <div style="margin-bottom: 20px;">
+                                    <div style="font-weight: 600; font-size: 14px; margin-bottom: 10px;">${idx + 1}. ${esc(p.enunciado || p.Enunciado)}</div>
+                                    <div style="margin-top: 12px; border-bottom: 1px solid #94A3B8; height: 25px; width: 100%;"></div>
+                                    <div style="margin-top: 8px; border-bottom: 1px solid #94A3B8; height: 25px; width: 100%;"></div>
+                                </div>
+                            `;
+                        }
+
+                        // Para opción múltiple o Verdadero/Falso (Tipos 1 y 2)
+                        return `
+                            <div style="margin-bottom: 15px;">
+                                <div style="font-weight: 600; font-size: 14px; margin-bottom: 6px;">${idx + 1}. ${esc(p.enunciado || p.Enunciado)}</div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding-left: 12px;">
+                                    ${opciones.map((op, oIdx) => `
+                                        <div style="font-size: 13px;">
+                                            <span>(${String.fromCharCode(97 + oIdx)})</span> ${esc(op.textoOpcion || op.TextoOpcion)}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+
+                $('modalVistaPreliminar').classList.add('active');
+
+            } catch (err) {
+                console.error(err);
+                alert('Error de red al obtener el detalle del test.');
+            }
+            return;
+        }
+
+        if (confirm('¿Eliminar este test?')) eliminarTests([testId]);
     });
+
+    // Eventos para cerrar el modal de vista preliminar
+    $('btnCerrarPreview').addEventListener('click', () => $('modalVistaPreliminar').classList.remove('active'));
+    $('btnCerrarPreview2').addEventListener('click', () => $('modalVistaPreliminar').classList.remove('active'));
+
+    // Botón de imprimir desde la misma vista preliminar
+    $('btnImprimirIndividual').addEventListener('click', () => {
+        if (!testActualPreview) return;
+        // Disparamos la misma lógica de exportación pero con este único test
+        exportarUnicoTestPdf(testActualPreview);
+    });
+
+    function exportarUnicoTestPdf(test) {
+        const ventanaImpresion = window.open('', '_blank');
+        ventanaImpresion.document.write(`
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <title>${esc(test.nombre || test.Nombre)} - InkMath</title>
+            <style>
+                @page { size: legal; margin: 20mm; }
+                body { font-family: 'Segoe UI', Arial, sans-serif; color: #1E293B; line-height: 1.5; margin: 0; padding: 20px; }
+                .header-institucional { text-align: center; border-bottom: 2px solid #6F4FB8; padding-bottom: 15px; margin-bottom: 25px; }
+                .header-institucional h2 { margin: 0; color: #6F4FB8; font-size: 22px; }
+                .header-institucional p { margin: 5px 0 0; color: #64748B; font-size: 14px; }
+                .datos-alumno { display: flex; justify-content: space-between; margin-bottom: 25px; font-size: 14px; border: 1px solid #CBD5E1; padding: 10px 15px; border-radius: 6px; }
+                .instrucciones { font-style: italic; font-size: 13px; margin-bottom: 20px; color: #475569; background: #F8FAFC; padding: 8px 12px; border-left: 3px solid #6F4FB8; }
+                .pregunta-item { margin-bottom: 18px; }
+                .enunciado { font-weight: 600; margin-bottom: 8px; font-size: 15px; }
+                .opciones-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-left: 15px; }
+                .opcion { font-size: 14px; }
+            </style>
+        </head>
+        <body>
+            <div class="header-institucional">
+                <h2>INKMATH - PLATAFORMA EDUCATIVA</h2>
+                <p>Evaluación Académica: <strong>${esc(test.nombre || test.Nombre)}</strong></p>
+            </div>
+            <div class="datos-alumno">
+                <span><strong>Nombre del Estudiante:</strong> _________________________________________</span>
+                <span><strong>Fecha:</strong> ____/____/2026</span>
+            </div>
+            <div class="instrucciones">
+                Instrucciones: Lee atentamente cada enunciado y marca con una "X" o escribe la respuesta correcta según corresponda.
+            </div>
+            <div class="preguntas-lista">
+                ${(test.preguntas || test.Preguntas).map((p, idx) => `
+                    <div class="pregunta-item">
+                        <div class="enunciado">${idx + 1}. ${esc(p.enunciado || p.Enunciado)}</div>
+                        <div class="opciones-grid">
+                            ${(p.opciones || p.Opciones).map((op, oIdx) => `
+                                <div class="opcion">
+                                    <span>(${String.fromCharCode(97 + oIdx)})</span> ${esc(op.textoOpcion || op.TextoOpcion)}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            <script>
+                window.onload = function() { window.print(); };
+            </script>
+        </body>
+        </html>
+    `);
+        ventanaImpresion.document.close();
+    }
 
     $('btnEliminarBloque').addEventListener('click', () => {
         const ids = testsSeleccionados();
@@ -380,4 +527,231 @@
     aplicarControlPorRol();
     cargarAulas();
     cargar(true);
+
+    // ---------- Exportar Test Individual a PDF / Impresión ----------
+    function exportarUnicoTestPdf(test) {
+        const ventanaImpresion = window.open('', '_blank');
+        ventanaImpresion.document.write(`
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <title>${esc(test.nombre || test.Nombre)} - InkMath</title>
+            <style>
+                @page { size: legal; margin: 15mm; }
+                body { font-family: 'Segoe UI', Arial, sans-serif; color: #1E293B; line-height: 1.4; margin: 0; padding: 0; background: #FFF; }
+                .evaluacion-page { width: 100%; box-sizing: border-box; page-break-after: always; margin-bottom: 30px; }
+                .evaluacion-page:last-child { page-break-after: avoid; }
+                
+                .header-institucional { text-align: center; border-bottom: 2px solid #6F4FB8; padding-bottom: 10px; margin-bottom: 20px; }
+                .header-institucional h2 { margin: 0; color: #6F4FB8; font-size: 20px; }
+                .header-institucional p { margin: 4px 0 0; color: #64748B; font-size: 13px; }
+                
+                .datos-alumno { width: 100%; margin-bottom: 20px; font-size: 13px; border: 1px solid #CBD5E1; padding: 8px 12px; border-radius: 4px; box-sizing: border-box; }
+                .datos-alumno table { width: 100%; border-collapse: collapse; }
+                .datos-alumno td { padding: 0; }
+                
+                .instrucciones { font-style: italic; font-size: 12px; margin-bottom: 15px; color: #475569; background: #F8FAFC; padding: 6px 10px; border-left: 3px solid #6F4FB8; }
+                
+                .pregunta-item { margin-bottom: 16px; page-break-inside: avoid; }
+                .enunciado { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+                
+                /* Tabla de opciones segura para impresión (reemplaza flexbox) */
+                .opciones-table { width: 100%; border-collapse: collapse; margin-left: 10px; }
+                .opciones-table td { width: 50%; padding: 3px 6px; font-size: 13px; vertical-align: top; }
+                
+                .linea-respuesta { margin-top: 10px; border-bottom: 1px solid #94A3B8; height: 22px; width: 100%; }
+            </style>
+        </head>
+        <body>
+            <div class="evaluacion-page">
+                <div class="header-institucional">
+                    <h2>INKMATH - PLATAFORMA EDUCATIVA</h2>
+                    <p>Evaluación Académica: <strong>${esc(test.nombre || test.Nombre)}</strong></p>
+                </div>
+                
+                <div class="datos-alumno">
+                    <table>
+                        <tr>
+                            <td><strong>Nombre del Estudiante:</strong> _________________________________________</td>
+                            <td style="text-align: right;"><strong>Fecha:</strong> ____/____/2026</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="instrucciones">
+                    Instrucciones: Lee atentamente cada enunciado y marca con una "X" o escribe la respuesta correcta según corresponda.
+                </div>
+
+                <div class="preguntas-lista">
+                    ${(test.preguntas || test.Preguntas).map((p, idx) => {
+            const tipo = Number(p.tipoPreguntaId || p.TipoPreguntaId);
+            const opciones = p.opciones || p.Opciones || [];
+
+            if (tipo === 3) {
+                return `
+                                <div class="pregunta-item">
+                                    <div class="enunciado">${idx + 1}. ${esc(p.enunciado || p.Enunciado)}</div>
+                                    <div class="linea-respuesta"></div>
+                                    <div class="linea-respuesta"></div>
+                                </div>
+                            `;
+            }
+
+            // Agrupar opciones en pares de columnas usando filas de tabla HTML para impresión perfecta
+            let filasOpciones = '';
+            for (let i = 0; i < opciones.length; i += 2) {
+                const op1 = opciones[i];
+                const op2 = opciones[i + 1];
+                filasOpciones += `
+                                <tr>
+                                    <td>(${String.fromCharCode(97 + i)}) ${esc(op1.textoOpcion || op1.TextoOpcion)}</td>
+                                    <td>${op2 ? `(${String.fromCharCode(97 + i + 1)}) ${esc(op2.textoOpcion || op2.TextoOpcion)}` : ''}</td>
+                                </tr>
+                            `;
+            }
+
+            return `
+                            <div class="pregunta-item">
+                                <div class="enunciado">${idx + 1}. ${esc(p.enunciado || p.Enunciado)}</div>
+                                <table class="opciones-table">
+                                    ${filasOpciones}
+                                </table>
+                            </div>
+                        `;
+        }).join('')}
+                </div>
+            </div>
+            <script>
+                window.onload = function() { window.print(); };
+            </script>
+        </body>
+        </html>
+    `);
+        ventanaImpresion.document.close();
+    }
+
+
+    // ---------- Exportar Tests Seleccionados por Lote a PDF / Impresión ----------
+    async function exportarTestsPdfSeleccionados() {
+        const ids = testsSeleccionados();
+        if (!ids.length) return alert('Selecciona al menos un test para exportar.');
+
+        try {
+            const res = await api('/api/Tests/detalle-lote', {
+                method: 'POST',
+                body: JSON.stringify(ids)
+            });
+
+            if (!res.ok) return alert(await mensajeDe(res, 'No se pudieron obtener los datos para exportar.'));
+            const testsData = await res.json();
+
+            const ventanaImpresion = window.open('', '_blank');
+            ventanaImpresion.document.write(`
+            <!DOCTYPE html>
+            <html lang="es">
+            <head>
+                <meta charset="UTF-8">
+                <title>Evaluaciones InkMath - Formato Oficial</title>
+                <style>
+                    @page { size: legal; margin: 15mm; }
+                    body { font-family: 'Segoe UI', Arial, sans-serif; color: #1E293B; line-height: 1.4; margin: 0; padding: 0; background: #FFF; }
+                    .evaluacion-page { width: 100%; box-sizing: border-box; page-break-after: always; margin-bottom: 30px; }
+                    .evaluacion-page:last-child { page-break-after: avoid; }
+                    
+                    .header-institucional { text-align: center; border-bottom: 2px solid #6F4FB8; padding-bottom: 10px; margin-bottom: 20px; }
+                    .header-institucional h2 { margin: 0; color: #6F4FB8; font-size: 20px; }
+                    .header-institucional p { margin: 4px 0 0; color: #64748B; font-size: 13px; }
+                    
+                    .datos-alumno { width: 100%; margin-bottom: 20px; font-size: 13px; border: 1px solid #CBD5E1; padding: 8px 12px; border-radius: 4px; box-sizing: border-box; }
+                    .datos-alumno table { width: 100%; border-collapse: collapse; }
+                    .datos-alumno td { padding: 0; }
+                    
+                    .instrucciones { font-style: italic; font-size: 12px; margin-bottom: 15px; color: #475569; background: #F8FAFC; padding: 6px 10px; border-left: 3px solid #6F4FB8; }
+                    
+                    .pregunta-item { margin-bottom: 16px; page-break-inside: avoid; }
+                    .enunciado { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+                    
+                    .opciones-table { width: 100%; border-collapse: collapse; margin-left: 10px; }
+                    .opciones-table td { width: 50%; padding: 3px 6px; font-size: 13px; vertical-align: top; }
+                    
+                    .linea-respuesta { margin-top: 10px; border-bottom: 1px solid #94A3B8; height: 22px; width: 100%; }
+                </style>
+            </head>
+            <body>
+                ${testsData.map((test) => `
+                    <div class="evaluacion-page">
+                        <div class="header-institucional">
+                            <h2>INKMATH - PLATAFORMA EDUCATIVA</h2>
+                            <p>Evaluación Académica: <strong>${esc(test.nombre || test.Nombre)}</strong></p>
+                        </div>
+                        
+                        <div class="datos-alumno">
+                            <table>
+                                <tr>
+                                    <td><strong>Nombre del Estudiante:</strong> _________________________________________</td>
+                                    <td style="text-align: right;"><strong>Fecha:</strong> ____/____/2026</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="instrucciones">
+                            Instrucciones: Lee atentamente cada enunciado y marca con una "X" o escribe la respuesta correcta según corresponda.
+                        </div>
+
+                        <div class="preguntas-lista">
+                            ${(test.preguntas || test.Preguntas).map((p, idx) => {
+                const tipo = Number(p.tipoPreguntaId || p.TipoPreguntaId);
+                const opciones = p.opciones || p.Opciones || [];
+
+                if (tipo === 3) {
+                    return `
+                                        <div class="pregunta-item">
+                                            <div class="enunciado">${idx + 1}. ${esc(p.enunciado || p.Enunciado)}</div>
+                                            <div class="linea-respuesta"></div>
+                                            <div class="linea-respuesta"></div>
+                                        </div>
+                                    `;
+                }
+
+                let filasOpciones = '';
+                for (let i = 0; i < opciones.length; i += 2) {
+                    const op1 = opciones[i];
+                    const op2 = opciones[i + 1];
+                    filasOpciones += `
+                                        <tr>
+                                            <td>(${String.fromCharCode(97 + i)}) ${esc(op1.textoOpcion || op1.TextoOpcion)}</td>
+                                            <td>${op2 ? `(${String.fromCharCode(97 + i + 1)}) ${esc(op2.textoOpcion || op2.TextoOpcion)}` : ''}</td>
+                                        </tr>
+                                    `;
+                }
+
+                return `
+                                    <div class="pregunta-item">
+                                        <div class="enunciado">${idx + 1}. ${esc(p.enunciado || p.Enunciado)}</div>
+                                        <table class="opciones-table">
+                                            ${filasOpciones}
+                                        </table>
+                                    </div>
+                                `;
+            }).join('')}
+                        </div>
+                    </div>
+                `).join('')}
+                <script>
+                    window.onload = function() { window.print(); };
+                </script>
+            </body>
+            </html>
+        `);
+            ventanaImpresion.document.close();
+
+        } catch (err) {
+            console.error(err);
+            alert('Error de red al intentar exportar las evaluaciones.');
+        }
+    }
+
+    // Enlazar al evento del nuevo botón (asegúrate de que el id exista en tu HTML)
+    $('btnExportarPdfBloque')?.addEventListener('click', exportarTestsPdfSeleccionados);
 });

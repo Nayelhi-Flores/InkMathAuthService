@@ -18,7 +18,9 @@
                 <div class="breadcrumb">
                     <span class="bc-muted">Aulas</span>
                     <span class="bc-separator">&gt;</span>
-                    <span class="bc-active">Gestor de Aulas</span>
+                    <span class="bc-active bc-link" id="bcListaAulas">Gestor de Aulas</span>
+                    <span class="bc-separator" id="bcSepAula" hidden>&gt;</span>
+                    <span class="bc-active" id="bcDetalleAula" hidden>Dashboard del Aula</span>
                 </div>
                 <div class="user-profile">
                     <div class="user-info">
@@ -33,71 +35,169 @@
             </header>
 
             <main class="content-body">
-                <div class="page-header">
-                    <div class="title-section">
-                        <h1>GESTOR DE AULAS</h1>
-                        <p class="subtitle">Cree y configure espacios seguros de diversión y aprendizaje</p>
-                    </div>
-                    <div class="search-box">
-                        <input type="text" id="searchInput" placeholder="Nombre del aula..." autocomplete="off">
-                        <button id="btnSearch" class="search-btn">
-                            <img src="icons/bx-search.svg" alt="Buscar">
-                        </button>
-                    </div>
-                </div>
-
-                <div class="card-container">
-                    <div class="table-actions">
-                        <button id="btnNuevaAula" class="btn-primary">
-                            <span class="plus-icon">+</span> Nuevo
-                        </button>
-                        <div class="action-group-right">
-                            <button id="btnAsignarRecurso" class="btn-secondary">
-                                <img src="icons/bx-link.svg" alt="" class="btn-icon">
-                                <span>Asignar Recurso</span>
-                            </button>
-                            <button id="btnAsignarTest" class="btn-secondary">
-                                <img src="icons/bx-link.svg" alt="" class="btn-icon">
-                                <span>Asignar Test</span>
-                            </button>
-                            <button id="btnEliminar" class="btn-danger-outline">
-                                <img src="icons/bx-trash-alt.svg" alt="" class="btn-icon">
-                                <span>Eliminar</span>
+                <div id="vistaLista">
+                    <div class="page-header">
+                        <div class="title-section">
+                            <h1>GESTOR DE AULAS</h1>
+                            <p class="subtitle">Cree y configure espacios seguros de diversión y aprendizaje</p>
+                        </div>
+                        <div class="search-box">
+                            <input type="text" id="searchInput" placeholder="Nombre del aula..." autocomplete="off">
+                            <button id="btnSearch" class="search-btn">
+                                <img src="icons/bx-search.svg" alt="Buscar">
                             </button>
                         </div>
                     </div>
 
-                    <div class="table-responsive">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th class="col-checkbox"><input type="checkbox" id="selectAllCheckbox"></th>
-                                    <th>Código</th>
-                                    <th>Nombre</th>
-                                    <th class="text-center">Estudiantes</th>
-                                    <th class="text-center">Recursos</th>
-                                    <th class="text-center">Evaluaciones</th>
-                                    <th class="text-center">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="aulasTableBody"></tbody>
-                        </table>
+                    <div class="card-container">
+                        <div class="table-actions">
+                            <button id="btnNuevaAula" class="btn-primary">
+                                <span class="plus-icon">+</span> Nuevo
+                            </button>
+                            <div class="action-group-right">
+                                <button id="btnAsignarRecurso" class="btn-secondary">
+                                    <img src="icons/bx-link.svg" alt="" class="btn-icon">
+                                    <span>Asignar Recurso</span>
+                                </button>
+                                <button id="btnAsignarTest" class="btn-secondary">
+                                    <img src="icons/bx-link.svg" alt="" class="btn-icon">
+                                    <span>Asignar Test</span>
+                                </button>
+                                <button id="btnEliminar" class="btn-danger-outline">
+                                    <img src="icons/bx-trash-alt.svg" alt="" class="btn-icon">
+                                    <span>Eliminar</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th class="col-checkbox"><input type="checkbox" id="selectAllCheckbox"></th>
+                                        <th>Código</th>
+                                        <th>Nombre</th>
+                                        <th class="text-center">Estudiantes</th>
+                                        <th class="text-center">Recursos</th>
+                                        <th class="text-center">Evaluaciones</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="aulasTableBody"></tbody>
+                            </table>
+                        </div>
                     </div>
+
+                    <footer class="pagination-footer">
+                        <div class="pagination-info" id="paginationInfo">Mostrando 0 de 0 aulas existentes</div>
+                        <div class="pagination-controls">
+                            <button id="btnPrevPage" class="pagination-arrow">&lt;</button>
+                            <button id="btnFirstPage" class="page-badge active">1</button>
+                            <span class="page-text">de</span>
+                            <button id="btnLastPage" class="page-badge-secondary">1</button>
+                            <button id="btnNextPage" class="pagination-arrow">&gt;</button>
+                            <span class="page-text ml-15">Página</span>
+                            <select id="pageSelect" class="page-select"><option value="1">1</option></select>
+                            <span class="page-text">de <span id="totalPagesLabel">1</span></span>
+                        </div>
+                    </footer>
                 </div>
 
-                <footer class="pagination-footer">
-                    <div class="pagination-info" id="paginationInfo">Mostrando 0 de 0 aulas existentes</div>
-                    <div class="pagination-controls">
-                        <button id="btnPrevPage" class="pagination-arrow">&lt;</button>
-                        <button id="btnFirstPage" class="page-badge active">1</button>
-                        <span class="page-text">de</span>
-                        <button id="btnLastPage" class="page-badge-secondary">1</button>
-                        <button id="btnNextPage" class="pagination-arrow">&gt;</button>
-                        <span class="page-text ml-15">Página</span>
-                        <select id="pageSelect" class="page-select"><option value="1">1</option></select>
-                        <span class="page-text">de <span id="totalPagesLabel">1</span></span>
+                <section id="vistaDashboard" hidden>
+                    <div class="page-header">
+                        <div class="title-section">
+                            <h1 id="dashboardAulaNombre">DASHBOARD DEL AULA</h1>
+                            <p id="dashboardAulaSub" class="subtitle">Resumen general, alumnos y asignaciones</p>
+                        </div>
                     </div>
-                </footer>
+
+                    <!-- Tarjetas de Estadísticas rápidas -->
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
+                        <div class="card-container" style="margin: 0; padding: 20px; text-align: center;">
+                            <span style="display: block; font-size: 12px; color: #64748B; text-transform: uppercase; font-weight: 600;">Estudiantes Inscritos</span>
+                            <span id="statTotalAlumnos" style="font-size: 28px; font-weight: 700; color: #1E293B;">0</span>
+                        </div>
+                        <div class="card-container" style="margin: 0; padding: 20px; text-align: center;">
+                            <span style="display: block; font-size: 12px; color: #64748B; text-transform: uppercase; font-weight: 600;">Tests Activos</span>
+                            <span id="statTotalTests" style="font-size: 28px; font-weight: 700; color: #6F4FB8;">0</span>
+                        </div>
+                        <div class="card-container" style="margin: 0; padding: 20px; text-align: center;">
+                            <span style="display: block; font-size: 12px; color: #64748B; text-transform: uppercase; font-weight: 600;">Recursos Compartidos</span>
+                            <span id="statTotalRecursos" style="font-size: 28px; font-weight: 700; color: #1A9BAB;">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Contenedor principal con pestañas internas -->
+                    <div class="card-container">
+                        <div style="display: flex; border-bottom: 1px solid #CBD5E1; margin-bottom: 25px; gap: 20px;">
+                            <button type="button" class="tab-btn active" data-tab="tabAlumnos" style="background: none; border: none; padding: 8px 0; font-weight: 600; color: #6F4FB8; border-bottom: 2px solid #6F4FB8; cursor: pointer;">Estudiantes</button>
+                            <button type="button" class="tab-btn" data-tab="tabTests" style="background: none; border: none; padding: 8px 0; font-weight: 600; color: #64748B; cursor: pointer;">Tests Asignados</button>
+                            <button type="button" class="tab-btn" data-tab="tabRecursos" style="background: none; border: none; padding: 8px 0; font-weight: 600; color: #64748B; cursor: pointer;">Recursos</button>
+                        </div>
+
+                        <div id="tabAlumnos" class="tab-content">
+                            <h3 style="font-size: 16px; color: #1E293B; margin-bottom: 15px;">Listado de Alumnos en el Aula</h3>
+                            <!-- Contenedor con altura máxima y scroll interno -->
+                            <div class="table-responsive" style="max-height: 350px; overflow-y: auto; border: 1px solid #E2E8F0; border-radius: 8px;">
+                                <table class="data-table" style="width: 100%;">
+                                    <thead style="position: sticky; top: 0; background: #FFF; z-index: 1;">
+                                        <tr>
+                                            <th>Nombre del Estudiante</th>
+                                            <th>Correo / Usuario</th>
+                                            <th class="text-center">Progreso General</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tablaAlumnosDashboard"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div id="tabTests" class="tab-content" style="display: none;">
+                            <h3 style="font-size: 16px; color: #1E293B; margin-bottom: 15px;">Evaluaciones Vinculadas a esta Aula</h3>
+                            <div id="listaTestsDashboard" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                        </div>
+
+                        <div id="tabRecursos" class="tab-content" style="display: none;">
+                            <h3 style="font-size: 16px; color: #1E293B; margin-bottom: 15px;">Materiales y Recursos Educativos</h3>
+                            <div id="listaRecursosDashboard" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- PODIO / RANKING DE HONOR DEL AULA -->
+                    <div class="card-container" style="margin-bottom: 25px; margin-top: 25px; padding: 20px;">
+                        <h3 style="font-size: 16px; color: #6F4FB8; margin: 0 0 15px 0;">Ranking de Estudiantes (Top Puntajes)</h3>
+                        <div id="podioRankingAula" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            <!-- Se inyecta dinámicamente con las tarjetas tipo Podio -->
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN DE ALERTAS DE ADECUACIÓN / REZAGO ACADÉMICO -->
+                    <div class="card-container" style="margin-bottom: 25px; padding: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="font-size: 16px; color: #DC2626; margin: 0; display: flex; align-items: center; gap: 8px;">
+                                <span>⚠️</span> Adecuaciones Educativas
+                            </h3>
+                            <span id="totalAlertasBadge" class="badge" style="background: #FEE2E2; color: #DC2626; font-weight: 700;">0 Casos</span>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table" style="width: 100%;">
+                                <thead>
+                                    <tr>
+                                        <th>Estudiante</th>
+                                        <th>Aula</th>
+                                        <th class="text-center">Promedio General</th>
+                                        <th class="text-center">Niveles Reprobados</th>
+                                        <th class="text-center">Nivel de Riesgo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaAlertasRezago">
+                                    <!-- Se inyecta dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
             </main>
         </div>
     </div>

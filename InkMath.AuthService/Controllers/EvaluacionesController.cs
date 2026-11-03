@@ -9,7 +9,7 @@ namespace InkMath.AuthService.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "3")]
+    [Authorize(Roles = "3,2")]
     public class EvaluacionesController : ControllerBase
     {
         private readonly IEvaluacionService _evaluacionService;
@@ -75,10 +75,14 @@ namespace InkMath.AuthService.Controllers
             return Ok(analisis);
         }
 
-        [HttpGet("maestro/{maestroId}/rezago")]
-        [Authorize]
-        public async Task<IActionResult> ObtenerAlertasRezago(long maestroId)
+        [HttpGet("maestro/mis-alertas/rezago")]
+        [Authorize(Roles = "1,2")]
+        public async Task<IActionResult> ObtenerMisAlertasRezago()
         {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!long.TryParse(userIdClaim, out long maestroId))
+                return Unauthorized(new { mensaje = "Usuario no autenticado." });
+
             var alertas = await _reporteService.ObtenerAlertasRezagoPorMaestroAsync(maestroId);
             return Ok(alertas);
         }

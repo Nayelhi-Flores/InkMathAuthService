@@ -83,7 +83,7 @@ async function darseDeBaja() {
 
         if (response.ok) {
             alert('Tu cuenta ha sido desactivada.');
-            window.location.href = 'index.html';
+            window.location.href = '/';
         } else {
             const err = await response.json();
             alert(err.mensaje || 'Error al procesar la baja');

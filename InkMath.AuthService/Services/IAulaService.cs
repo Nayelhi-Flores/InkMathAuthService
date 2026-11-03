@@ -21,6 +21,10 @@ namespace InkMath.AuthService.Services
         Task<RespuestaPaginadaDto<RecursoResponseDto>> ObtenerRecursosPorMaestroPaginadosAsync(long maestroId, ConsultaRecursosPaginadaDto dto);
         Task<List<RecursoResponseDto>> ObtenerRecursosPorAulaAsync(long aulaId, long usuarioId, string rolId);
         Task<(bool Exito, string Mensaje)> AsignarRecursoAAulasAsync(long maestroId, List<long> recursoIds, List<long> aulaIds);
+        Task<AulaDashboardResponseDto?> ObtenerDashboardAulaAsync(long aulaId, long maestroId);
+        Task<(bool Exito, string Mensaje)> SalirDeAulaAsync(long estudianteId, long aulaId);
+        Task<List<TestAulaEstudianteDto>?> ObtenerTestsDeAulaParaEstudianteAsync(long aulaId, long estudianteId);
+        Task<bool> EsMaestroDelAulaAsync(long aulaId, long usuarioId);
     }
 
     public class AulaService : IAulaService
@@ -117,10 +121,10 @@ namespace InkMath.AuthService.Services
                 return (false, "El código de clase no existe.");
 
             // 2. Verificar si el alumno ya está inscrito en la tabla aula_estudiante
-            bool yaInscrito = await _context.AulaEstudiantes
-                .AnyAsync(ae => ae.AulaId == aula.Id && ae.EstudianteId == estudianteId);
+            var previa = await _context.AulaEstudiantes.IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(ae => ae.AulaId == aula.Id && ae.EstudianteId == estudianteId);
 
-            if (yaInscrito)
+            if (previa != null && previa.EstaActivo)
                 return (true, "El estudiante ya pertenece a este aula.");
 
             // 3. Validar límite de alumnos por aula (20 máximo en Plan Gratuito)
@@ -136,16 +140,22 @@ namespace InkMath.AuthService.Services
             }
 
             // 4. Registrar la inscripción
-            var nuevaInscripcion = new AulaEstudiante
+            if (previa != null)
             {
-                AulaId = aula.Id,
-                EstudianteId = estudianteId,
-                FechaInscripcion = DateTimeOffset.UtcNow
-            };
-
-            _context.AulaEstudiantes.Add(nuevaInscripcion);
+                previa.EstaActivo = true;
+                previa.FechaBaja = null;
+                previa.FechaInscripcion = DateTimeOffset.UtcNow;
+            }
+            else
+            {
+                _context.AulaEstudiantes.Add(new AulaEstudiante
+                {
+                    AulaId = aula.Id,
+                    EstudianteId = estudianteId,
+                    FechaInscripcion = DateTimeOffset.UtcNow
+                });
+            }
             await _context.SaveChangesAsync();
-
             return (true, "Estudiante vinculado exitosamente al aula.");
         }
 
@@ -483,5 +493,142 @@ namespace InkMath.AuthService.Services
 
             return (true, $"Se realizaron {nuevasAsignaciones.Count} asignaciones de recursos a aulas exitosamente.");
         }
+
+        public async Task<AulaDashboardResponseDto?> ObtenerDashboardAulaAsync(long aulaId, long maestroId)
+        {
+            // 1. Validar que el aula pertenezca al maestro y esté activa
+            var aula = await _context.Aulas
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.Id == aulaId && a.MaestroId == maestroId && a.EstaActivo);
+
+            if (aula == null)
+                return null;
+
+            // 2. Obtener los estudiantes inscritos haciendo join con la tabla de usuarios/estudiantes
+            var alumnos = await (from ae in _context.AulaEstudiantes
+                                 join u in _context.Usuarios on ae.EstudianteId equals u.Id
+                                 where ae.AulaId == aulaId
+                                 let totalTestsAula = _context.AulaTests.Count(at => at.AulaId == aulaId)
+                                 let testsCompletados = _context.IntentosTest
+                                     .Count(it => it.EstudianteId == u.Id && _context.AulaTests.Any(at => at.AulaId == aulaId && at.TestId == it.TestId))
+                                 select new EstudianteDashboardDto
+                                 {
+                                     Nombre = u.Nombre,
+                                     Correo = u.Email,
+                                     Progreso = totalTestsAula > 0 ? (int)((double)testsCompletados / totalTestsAula * 100) : -1
+                                 })
+                                 .AsNoTracking()
+                                 .ToListAsync();
+
+            // 3. Obtener los tests asignados haciendo join con los tests personalizados
+            var tests = await (from at in _context.AulaTests
+                               join t in _context.TestsPersonalizados on at.TestId equals t.Id
+                               where at.AulaId == aulaId
+                               select new TestDashboardDto
+                               {
+                                   TestId = t.Id,
+                                   Nombre = t.Nombre,
+                                   TotalPreguntas = _context.PreguntasTest.Count(p => p.TestId == t.Id)
+                               })
+                               .AsNoTracking()
+                               .ToListAsync();
+
+            // 4. Obtener los recursos asignados haciendo join con la tabla de recursos
+            var recursos = await (from ar in _context.AulasRecursos
+                                  join r in _context.Recursos on ar.RecursoId equals r.Id
+                                  where ar.AulaId == aulaId
+                                  select new RecursoResponseDto(
+                                      r.Id,
+                                      r.Titulo,
+                                      r.TipoRecursoId,
+                                      r.Referencia,
+                                      r.CreadoEn
+                                  ))
+                                  .AsNoTracking()
+                                  .ToListAsync();
+
+            return new AulaDashboardResponseDto
+            {
+                AulaId = aula.Id,
+                Nombre = aula.Nombre,
+                CodigoAcceso = aula.CodigoAcceso,
+                Alumnos = alumnos,
+                Tests = tests,
+                Recursos = recursos
+            };
+        }
+
+        public async Task<(bool Exito, string Mensaje)> SalirDeAulaAsync(long estudianteId, long aulaId)
+        {
+            // El filtro global ya excluye las inscripciones dadas de baja
+            var inscripcion = await _context.AulaEstudiantes
+                .FirstOrDefaultAsync(ae => ae.AulaId == aulaId && ae.EstudianteId == estudianteId);
+
+            if (inscripcion == null)
+                return (false, "No perteneces a esta aula.");
+
+            inscripcion.EstaActivo = false;
+            inscripcion.FechaBaja = DateTimeOffset.UtcNow;
+            await _context.SaveChangesAsync();
+
+            await _auditoriaService.RegistrarEventoAsync(
+                usuarioId: estudianteId,
+                accion: "SALIR_AULA_LOGICO",
+                descripcion: $"El estudiante {estudianteId} salió del aula {aulaId} (baja lógica; su progreso se conserva).");
+
+            return (true, "Saliste del aula. Tu progreso se conserva por si vuelves a entrar.");
+        }
+
+        public async Task<List<TestAulaEstudianteDto>?> ObtenerTestsDeAulaParaEstudianteAsync(long aulaId, long estudianteId)
+        {
+            bool pertenece = await _context.AulaEstudiantes.AsNoTracking()
+                .AnyAsync(ae => ae.AulaId == aulaId && ae.EstudianteId == estudianteId);
+            if (!pertenece) return null;
+
+            var tests = await (from at in _context.AulaTests.AsNoTracking()
+                               join t in _context.TestsPersonalizados.AsNoTracking() on at.TestId equals t.Id  // el filtro excluye los anulados
+                               where at.AulaId == aulaId
+                               orderby at.FechaAsignacion descending
+                               select new
+                               {
+                                   t.Id,
+                                   t.Nombre,
+                                   Total = t.Preguntas.Count,
+                                   t.FechaDisponibleDesde,
+                                   t.FechaDisponibleHasta
+                               }).ToListAsync();
+
+            var ids = tests.Select(t => t.Id).ToList();
+            var resumen = await _context.IntentosTest.AsNoTracking()
+                .Where(i => i.EstudianteId == estudianteId && ids.Contains(i.TestId))
+                .GroupBy(i => i.TestId)
+                .Select(g => new { TestId = g.Key, Mejor = g.Max(x => x.PuntajeObtenido), Cantidad = g.Count() })
+                .ToListAsync();
+
+            var ahora = DateTime.UtcNow;
+            return tests.Select(t =>
+            {
+                var r = resumen.FirstOrDefault(x => x.TestId == t.Id);
+                // "Hasta" sin hora (00:00) significa que el último día cuenta completo
+                var hasta = t.FechaDisponibleHasta;
+                if (hasta.HasValue && hasta.Value.TimeOfDay == TimeSpan.Zero) hasta = hasta.Value.AddDays(1);
+
+                return new TestAulaEstudianteDto
+                {
+                    TestId = t.Id,
+                    Nombre = t.Nombre,
+                    TotalPreguntas = t.Total,
+                    DisponibleDesde = t.FechaDisponibleDesde,
+                    DisponibleHasta = t.FechaDisponibleHasta,
+                    Disponible = (!t.FechaDisponibleDesde.HasValue || t.FechaDisponibleDesde.Value <= ahora)
+                                 && (!hasta.HasValue || hasta.Value >= ahora),
+                    MejorPuntaje = r?.Mejor ?? 0,
+                    Intentos = r?.Cantidad ?? 0
+                };
+            }).ToList();
+        }
+
+        public Task<bool> EsMaestroDelAulaAsync(long aulaId, long usuarioId) =>
+            _context.Aulas.AsNoTracking().AnyAsync(a => a.Id == aulaId && a.MaestroId == usuarioId);
     }
 }
