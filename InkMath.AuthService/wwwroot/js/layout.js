@@ -149,5 +149,5 @@ async function cerrarSesion() {
     } catch (err) {
         console.error('Error al cerrar sesión:', err);
     }
-    window.location.href = 'index.html';
+    window.location.href = '/';
 }

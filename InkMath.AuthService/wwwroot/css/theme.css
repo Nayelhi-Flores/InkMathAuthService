@@ -1,42 +1,74 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Quicksand:wght@500;600;700&display=swap');
 
 :root {
-    /* Marca */
-    --color-brand-dark: #00182E;
-    --color-brand-primary: #0984C6;
-    --color-brand-primary-hover: #076DA4;
-    --color-brand-light-bg: #EBF8FF;
+    /* ---- Paleta base con escalas ---- */
+    --navy-900: #001D37;
+    --navy-800: #082E50;
+    --navy-700: #14436C;
+
+    --blue-500: #097BB6;
+    --blue-600: #076394;   /* hover y "canto" de botones */
+    --blue-100: #DCEFFA;
+    --blue-50:  #F0F8FD;
+
+    --yellow-400: #FFD06E;
+    --yellow-600: #E3A72B; /* canto del botón amarillo */
+    --yellow-100: #FFF3D6;
+    --yellow-900: #6B4700; /* texto sobre fondos amarillos claros */
+
+    --green-500: #3C9F60;
+    --green-700: #2A7A47;  /* texto verde legible sobre blanco */
+    --green-100: #DDF3E5;
+
+    --orange-400: #F79B6C;
+    --orange-600: #D77544;
+    --orange-100: #FDE8DC;
+    --orange-900: #8F3E15;
+
+    /* ---- Nombres semánticos (los que ya usan tus CSS) ---- */
+    --color-brand-dark: var(--navy-900);
+    --color-brand-primary: var(--blue-500);
+    --color-brand-primary-hover: var(--blue-600);
+    --color-brand-light-bg: var(--blue-50);
     --color-brand-accent: #6CB9E3;
-    /* Estados */
-    --color-success: #10B981;
-    --color-warning: #F59E0B;
-    --color-danger: #E53E3E;
-    --color-danger-bg: #FFF5F5;
-    --color-danger-border: #FEB2B2;
-    /* Superficies y bordes */
-    --color-bg-body: #F4F6FB;
+
+    --color-success: var(--green-500);
+    --color-warning: var(--yellow-400);
+    --color-danger: #D8483E;
+    --color-danger-bg: #FEF1EF;
+    --color-danger-border: #F5B9B3;
+
+    --color-bg-body: #F2F7FB;
     --color-surface-white: #FFFFFF;
-    --color-surface-card: #F8FAFC;
-    --color-border-light: #E2E8F0;
-    --color-border-dashed: #CBD5E1;
-    /* Texto */
-    --color-text-dark: #2B3A4A;
-    --color-text-main: #2B3A4A;
-    --color-text-muted: #8292A1;
-    --color-text-light: #94A3B8;
-    /* Acciones de tabla */
-    --color-action-view-bg: #E0F2FE;
-    --color-action-edit-bg: #FEF3C7;
-    /* Radios y sombras */
-    --radius-lg: 16px;
-    --radius-md: 10px;
-    --radius-sm: 8px;
-    --shadow-card: 0 8px 30px rgba(0, 24, 46, 0.08);
-    /* Tipografía */
+    --color-surface-card: #F7FAFD;
+    --color-border-light: #E1EAF2;
+    --color-border-dashed: #C9D6E3;
+
+    --color-text-dark: #0F2740;
+    --color-text-main: #1E3550;
+    --color-text-muted: #5F7389;   /* contraste AA sobre blanco (antes #8292A1 no pasaba) */
+    --color-text-light: #7C8FA3;
+
+    --color-action-view-bg: var(--blue-100);
+    --color-action-edit-bg: var(--yellow-100);
+
+    /* ---- Forma ---- */
+    --radius-xl: 24px;
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
+    --radius-pill: 999px;
+
+    /* Sombras: el "canto" inferior da el efecto de botón/tarjeta con volumen */
+    --shadow-card: 0 1px 2px rgba(0, 29, 55, .04), 0 10px 28px rgba(0, 29, 55, .07);
+    --shadow-pop: 0 24px 60px rgba(0, 29, 55, .28);
+    --edge: 0 4px 0;               /* uso: box-shadow: var(--edge) <color> */
+
+    /* ---- Tipografía ---- */
+    --font-display: 'Poppins', 'Quicksand', system-ui, sans-serif;
     --font-base: 'Quicksand', system-ui, sans-serif;
-    /* ---- Alias heredados (antes vivían en aulas.css) ----
-       Se mantienen por si tus archivos JS usan estos nombres dentro de
-       template strings. Cuando hagas búsqueda global y no aparezcan, bórralos. */
+
+    /* ---- Alias heredados (JS con estilos inline los usa) ---- */
     --bg-body: var(--color-bg-body);
     --bg-sidebar: var(--color-surface-white);
     --bg-header: var(--color-brand-dark);
@@ -49,52 +81,53 @@
     --danger-red: var(--color-danger);
     --danger-bg: var(--color-danger-bg);
     --danger-border: var(--color-danger-border);
-    --action-bg: #E6F4FA;
-    --action-edit-bg: #FEF6E6;
-    --action-edit-icon: #D97706;
+    --action-bg: var(--blue-100);
+    --action-edit-bg: var(--yellow-100);
+    --action-edit-icon: #B77A00;
 }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-html {
-    -webkit-text-size-adjust: 100%;
-}
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 
 body {
     min-height: 100vh;
     min-height: 100dvh;
     background-color: var(--color-bg-body);
-    color: var(--color-text-dark);
+    color: var(--color-text-main);
     font-family: var(--font-base);
+    font-weight: 500;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
 }
 
-button,
-input,
-select,
-textarea {
-    font-family: inherit;
+h1, h2, h3, h4 { font-family: var(--font-display); color: var(--color-text-dark); line-height: 1.2; }
+
+button, input, select, textarea { font-family: inherit; }
+
+/* Foco visible y consistente (accesibilidad por teclado) */
+:focus-visible {
+    outline: 3px solid var(--yellow-400);
+    outline-offset: 2px;
+    border-radius: 6px;
 }
 
-/* ---- Utilidades globales ---- */
-[hidden] {
-    display: none !important;
-}
+::selection { background: var(--yellow-400); color: var(--navy-900); }
 
-.text-center {
-    text-align: center;
-}
-
-.ml-15 {
-    margin-left: 15px;
+/* ---- Utilidades ---- */
+[hidden] { display: none !important; }
+.text-center { text-align: center; }
+.ml-15 { margin-left: 15px; }
+.sr-only {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
     *, *::before, *::after {
         transition-duration: 0.01ms !important;
         animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
     }
 }

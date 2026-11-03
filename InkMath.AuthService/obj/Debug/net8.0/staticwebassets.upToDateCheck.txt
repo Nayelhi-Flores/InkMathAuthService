@@ -1,4 +1,3 @@
-wwwroot\css\auth.css
 wwwroot\icons\V2.svg
 wwwroot\registro.html
 wwwroot\icons\bx-edit-alt.svg
@@ -17,7 +16,6 @@ wwwroot\icons\bx-trash-alt.svg
 wwwroot\icons\bx-trash-alt.svg.import
 wwwroot\icons\chevron-left.svg
 wwwroot\icons\chevron-left.svg.import
-wwwroot\css\configuracion.css
 wwwroot\js\api.js
 wwwroot\js\evaluaciones.js
 wwwroot\icons\bx-school.svg
@@ -33,15 +31,10 @@ wwwroot\configuracion.html
 wwwroot\js\layout.js
 wwwroot\evaluaciones.html
 wwwroot\js\auth.js
-wwwroot\css\registro.css
-wwwroot\css\evaluaciones.css
 wwwroot\js\admin.js
 wwwroot\icons\bx-file-report.svg
 wwwroot\icons\V1.svg
 wwwroot\recursos.html
-wwwroot\css\theme.css
-wwwroot\css\layout.css
-wwwroot\css\components.css
 wwwroot\index.html
 wwwroot\js\recursos.js
 wwwroot\js\aulas.js
@@ -49,7 +42,6 @@ wwwroot\formulario.html
 wwwroot\aulas.html
 wwwroot\icons\bx-gaming.svg
 wwwroot\admin.html
-wwwroot\css\admin.css
 wwwroot\js\registro.js
 wwwroot\juego.apple-touch-icon.png
 wwwroot\juego.audio.position.worklet.js
@@ -60,3 +52,13 @@ wwwroot\juego.js
 wwwroot\juego.pck
 wwwroot\juego.png
 wwwroot\juego.wasm
+wwwroot\js\ui-modal.js
+wwwroot\css\ui-modal.css
+wwwroot\css\theme.css
+wwwroot\css\registro.css
+wwwroot\css\layout.css
+wwwroot\css\evaluaciones.css
+wwwroot\css\configuracion.css
+wwwroot\css\components.css
+wwwroot\css\auth.css
+wwwroot\css\admin.css

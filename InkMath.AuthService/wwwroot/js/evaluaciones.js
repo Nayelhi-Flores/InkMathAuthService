@@ -18,7 +18,7 @@
             ...options,
             headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(options.headers || {}) }
         });
-        if (res.status === 401) { window.location.href = 'index'; throw new Error('401'); }
+        if (res.status === 401) { window.location.href = ''; throw new Error('401'); }
         return res;
     }
     const mensajeDe = async (res, def) => (await res.json().catch(() => null))?.mensaje || def;
@@ -182,7 +182,7 @@
                     <p style="margin: 5px 0 0; color: #64748B; font-size: 13px;">Evaluación: <strong>${esc(testActualPreview.nombre || testActualPreview.Nombre)}</strong></p>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 13px; border: 1px solid #CBD5E1; padding: 8px 12px; border-radius: 4px;">
-                    <span><strong>Estudiante:</strong> _________________________________________</span>
+                    <span><strong>Estudiante:</strong> _________ </span>
                     <span><strong>Fecha:</strong> ____/____/2026</span>
                 </div>
                 <div style="font-style: italic; font-size: 12px; margin-bottom: 15px; color: #475569; background: #F8FAFC; padding: 6px 10px; border-left: 3px solid #6F4FB8;">
@@ -272,7 +272,7 @@
                 <p>Evaluación Académica: <strong>${esc(test.nombre || test.Nombre)}</strong></p>
             </div>
             <div class="datos-alumno">
-                <span><strong>Nombre del Estudiante:</strong> _________________________________________</span>
+                <span><strong>Nombre del Estudiante:</strong> ________________________________________________________________</span>
                 <span><strong>Fecha:</strong> ____/____/2026</span>
             </div>
             <div class="instrucciones">
