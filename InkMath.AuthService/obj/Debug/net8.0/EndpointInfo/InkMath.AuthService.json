@@ -248,6 +248,38 @@
         }
       }
     },
+    "/api/Aulas/{aulaId}/recursos/{recursoId}": {
+      "delete": {
+        "tags": [
+          "Aulas"
+        ],
+        "parameters": [
+          {
+            "name": "aulaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "recursoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Aulas/vincular": {
       "post": {
         "tags": [
@@ -1018,6 +1050,72 @@
         }
       }
     },
+    "/api/Dashboard/kpis": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Dashboard/intentos-diarios": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Dashboard/usuarios-por-rol": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Dashboard/auditoria-mongo": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "parameters": [
+          {
+            "name": "fechaInicio",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "fechaFin",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Evaluaciones/resultados": {
       "post": {
         "tags": [
@@ -1391,6 +1489,38 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Tests/{testId}/aulas/{aulaId}": {
+      "delete": {
+        "tags": [
+          "Tests"
+        ],
+        "parameters": [
+          {
+            "name": "testId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "aulaId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"

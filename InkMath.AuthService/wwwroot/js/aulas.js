@@ -129,6 +129,7 @@
 
     let alumnosGlobal = [];
     let tieneTestsGlobal = false;
+    let aulaActualId = null;
 
     // Definición correcta de la función que faltaba
     function renderTablaAlumnosPaginada() {
@@ -185,6 +186,43 @@
         });
     });
 
+    // ---------- Desvincular un test o recurso del aula (solo quita la asignación; no borra el test ni el recurso) ----------
+    async function desvincular(tipo, id, nombre, btn) {
+        const esTest = tipo === 'test';
+        const ok = await UI.confirm(
+            `¿Desvincular ${esTest ? 'el test' : 'el recurso'} "${nombre}" de esta aula?\n` +
+            (esTest
+                ? 'Los estudiantes dejarán de verlo en el aula. Sus intentos anteriores se conservan.'
+                : 'Los estudiantes dejarán de verlo en el aula. El recurso seguirá en tu biblioteca.'),
+            { danger: true, confirmText: 'Desvincular', title: esTest ? 'Desvincular test' : 'Desvincular recurso' }
+        );
+        if (!ok) return;
+
+        const url = esTest ? `/api/Tests/${id}/aulas/${aulaActualId}` : `/api/Aulas/${aulaActualId}/recursos/${id}`;
+        btn.disabled = true;
+        try {
+            const res = await api(url, { method: 'DELETE' });
+            if (!res.ok) return UI.alert(await mensajeDe(res, 'No se pudo desvincular.'), { type: 'danger' });
+            UI.toast((await res.json().catch(() => null))?.mensaje || 'Desvinculado correctamente.', 'success');
+            // Refresca el dashboard del aula (vuelve a pulsar "ver") y la tabla de aulas (contadores)
+            tbody.querySelector(`button[data-action="ver"][data-id="${aulaActualId}"]`)?.click();
+            cargar();
+        } catch (err) {
+            console.error(err);
+            UI.alert('Error de red al desvincular.', { type: 'danger' });
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    const alClicDesvincular = e => {
+        const btn = e.target.closest('button[data-action="desvincular"]');
+        if (!btn || !aulaActualId) return;
+        desvincular(btn.dataset.tipo, Number(btn.dataset.id), btn.dataset.nombre || '', btn);
+    };
+    listaTestsDashboard.addEventListener('click', alClicDesvincular);
+    listaRecursosDashboard.addEventListener('click', alClicDesvincular);
+
     tbody.addEventListener('click', async e => {
         const btn = e.target.closest('button[data-action]');
         if (!btn) return;
@@ -192,6 +230,7 @@
         if (btn.dataset.action === 'ver') {
             const aulaId = Number(btn.dataset.id);
             const nombreAula = btn.dataset.nombre || 'Aula';
+            aulaActualId = aulaId;
 
             try {
                 const [resDashboard, resRanking, resRezago] = await Promise.all([
@@ -200,7 +239,7 @@
                     api(`/api/Evaluaciones/maestro/mis-alertas/rezago`)
                 ]);
 
-                if (!resDashboard.ok) return alert(await mensajeDe(resDashboard, 'No se pudo cargar el dashboard del aula.'));
+                if (!resDashboard.ok) return UI.alert(await mensajeDe(resDashboard, 'No se pudo cargar el dashboard del aula.'), { type: 'danger' });
 
                 const data = await resDashboard.json();
                 const ranking = resRanking.ok ? await resRanking.json() : [];
@@ -267,7 +306,10 @@
                             <strong>${esc(t.nombre || t.Nombre)}</strong>
                             <div style="font-size: 12px; color: #64748B;">Preguntas: ${t.totalPreguntas || t.TotalPreguntas || 0}</div>
                         </div>
-                        <span class="badge badge-success">Asignado</span>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="badge badge-success">Asignado</span>
+                            <button type="button" class="btn-danger-outline" style="padding: 6px 12px; font-size: 13px;" data-action="desvincular" data-tipo="test" data-id="${t.testId || t.TestId}" data-nombre="${esc(t.nombre || t.Nombre)}">Desvincular</button>
+                        </div>
                     </div>
                 `).join('') : `<p style="color: #94A3B8; text-align: center; padding: 20px;">No hay tests asignados a esta aula.</p>`;
 
@@ -277,7 +319,10 @@
                             <strong>${esc(r.titulo || r.Titulo)}</strong>
                             <div style="font-size: 12px; color: #64748B;">Recurso Educativo</div>
                         </div>
-                        <a href="${esc(r.referencia || r.Referencia)}" target="_blank" class="btn-secondary" style="padding: 6px 12px; font-size: 13px; text-decoration: none;">Abrir</a>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <a href="${esc(r.referencia || r.Referencia)}" target="_blank" rel="noopener" class="btn-secondary" style="padding: 6px 12px; font-size: 13px; text-decoration: none;">Abrir</a>
+                            <button type="button" class="btn-danger-outline" style="padding: 6px 12px; font-size: 13px;" data-action="desvincular" data-tipo="recurso" data-id="${r.id || r.Id}" data-nombre="${esc(r.titulo || r.Titulo)}">Desvincular</button>
+                        </div>
                     </div>
                 `).join('') : `<p style="color: #94A3B8; text-align: center; padding: 20px;">No hay recursos compartidos en esta aula.</p>`;
 
@@ -285,7 +330,7 @@
 
             } catch (err) {
                 console.error(err);
-                alert('Error de red al intentar obtener los datos del dashboard.');
+                UI.alert('Error de red al intentar obtener los datos del dashboard.', { type: 'danger' });
             }
             return;
         }
@@ -309,19 +354,19 @@
         if (!nombre) return;
         try {
             const res = await api(id ? `/api/Aulas/${id}` : '/api/Aulas/crear', { method: id ? 'PUT' : 'POST', body: JSON.stringify({ nombre }) });
-            if (!res.ok) return alert(await mensajeDe(res, 'No se pudo guardar el aula.'));
+            if (!res.ok) return UI.alert(await mensajeDe(res, 'No se pudo guardar el aula.'), { type: 'danger' });
             aulaModal.classList.remove('active');
             cargar(id ? false : true);
-        } catch (err) { console.error(err); alert('Error de red al guardar el aula.'); }
+        } catch (err) { console.error(err); UI.alert('Error de red al guardar el aula.', { type: 'danger' }); }
     });
 
     $('btnEliminar').addEventListener('click', async () => {
         const ids = aulasSeleccionadas();
-        if (!ids.length) return alert('Selecciona al menos un aula.');
-        if (!confirm(`¿Eliminar ${ids.length} aula(s) seleccionada(s)?`)) return;
+        if (!ids.length) return UI.alert('Selecciona al menos un aula.');
+        if (!(await UI.confirm(`¿Eliminar ${ids.length} aula(s) seleccionada(s)?`, { danger: true, confirmText: 'Eliminar', title: 'Eliminar aulas' }))) return;
         const resultados = await Promise.allSettled(ids.map(id => api(`/api/Aulas/${id}`, { method: 'DELETE' })));
         const fallidas = resultados.filter(r => r.status !== 'fulfilled' || !r.value.ok).length;
-        if (fallidas) alert(`${fallidas} aula(s) no pudieron eliminarse.`);
+        if (fallidas) UI.alert(`${fallidas} aula(s) no pudieron eliminarse.`, { type: 'danger' });
         cargar(true);
     });
 
@@ -380,7 +425,7 @@
 
     async function abrirAsignar(tipo) {
         aulasDestino = aulasSeleccionadas();
-        if (!aulasDestino.length) return alert('Selecciona al menos un aula.');
+        if (!aulasDestino.length) return UI.alert('Selecciona al menos un aula.');
         tipoAsignacion = tipo;
         const esRecurso = tipo === 'recurso';
         $('asignarTitulo').textContent = esRecurso ? 'Asignar recursos a aulas' : 'Asignar tests a aulas';
@@ -389,7 +434,7 @@
         selector.setItems([]);
         modalAsignar.classList.add('active');
         try { selector.setItems(esRecurso ? await cargarRecursos() : await cargarTests()); }
-        catch (err) { console.error(err); alert('No se pudo cargar la lista.'); }
+        catch (err) { console.error(err); UI.alert('No se pudo cargar la lista.', { type: 'danger' }); }
     }
 
     btnConfirmar.addEventListener('click', async () => {
@@ -400,11 +445,11 @@
         const body = esRecurso ? { recursoId: ids, aulaIds: aulasDestino } : { testIds: ids, aulaIds: aulasDestino };
         try {
             const res = await api(url, { method: 'POST', body: JSON.stringify(body) });
-            if (!res.ok) return alert(await mensajeDe(res, 'No se pudo completar la asignación.'));
-            alert((await res.json().catch(() => null))?.mensaje || 'Asignación realizada.');
+            if (!res.ok) return UI.alert(await mensajeDe(res, 'No se pudo completar la asignación.'), { type: 'danger' });
+            UI.toast((await res.json().catch(() => null))?.mensaje || 'Asignación realizada.', 'success');
             modalAsignar.classList.remove('active');
             cargar();
-        } catch (err) { console.error(err); alert('Error de red al asignar.'); }
+        } catch (err) { console.error(err); UI.alert('Error de red al asignar.', { type: 'danger' }); }
     });
     $('btnCancelarAsignar').addEventListener('click', () => modalAsignar.classList.remove('active'));
     $('btnAsignarRecurso').addEventListener('click', () => abrirAsignar('recurso'));

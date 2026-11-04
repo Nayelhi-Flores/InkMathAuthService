@@ -37,12 +37,12 @@ async function guardarPerfil(e) {
         });
 
         if (response.ok) {
-            alert('Perfil actualizado con éxito');
+            UI.toast('Perfil actualizado con éxito', 'success');
             cargarDatosPerfil();
             if (typeof cargarPerfilTopbar === 'function') cargarPerfilTopbar();
         } else {
             const err = await response.json();
-            alert(err.mensaje || 'Error al actualizar perfil');
+            UI.alert(err.mensaje || 'Error al actualizar perfil', { type: 'danger' });
         }
     } catch (err) {
         console.error('Error:', err);
@@ -50,7 +50,7 @@ async function guardarPerfil(e) {
 }
 
 async function simularSuscripcion() {
-    if (!confirm('¿Deseas activar una suscripción de prueba por 30 días?')) return;
+    if (!(await UI.confirm('¿Deseas activar una suscripción de prueba por 30 días?', { confirmText: 'Activar' }))) return;
 
     try {
         const response = await fetch('/api/Usuarios/prueba-suscripcion', {
@@ -58,15 +58,15 @@ async function simularSuscripcion() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ planId: 1 }) // ID 1 representa el plan premium de demostración
+            body: JSON.stringify({ planId: 3 })
         });
 
         if (response.ok) {
-            alert('¡Suscripción de prueba obtenida correctamente!');
+            UI.toast('¡Suscripción de prueba obtenida correctamente!', 'success');
             cargarDatosPerfil();
         } else {
             const err = await response.json();
-            alert(err.mensaje || 'Error al obtener la suscripción');
+            UI.alert(err.mensaje || 'Error al obtener la suscripción', { type: 'danger' });
         }
     } catch (err) {
         console.error('Error:', err);
@@ -74,7 +74,7 @@ async function simularSuscripcion() {
 }
 
 async function darseDeBaja() {
-    const confirmacion = confirm('¿Estás seguro de que deseas darte de baja? Esta acción desactivará tu acceso a la plataforma.');
+    const confirmacion = await UI.confirm('¿Estás seguro de que deseas darte de baja? Esta acción desactivará tu acceso a la plataforma.', { danger: true, confirmText: 'Darme de baja', title: 'Darse de baja' });
     if (!confirmacion) return;
 
     try {
@@ -82,11 +82,11 @@ async function darseDeBaja() {
             method: 'DELETE'});
 
         if (response.ok) {
-            alert('Tu cuenta ha sido desactivada.');
+            await UI.alert('Tu cuenta ha sido desactivada.', { type: 'success', title: 'Cuenta desactivada' });
             window.location.href = '/';
         } else {
             const err = await response.json();
-            alert(err.mensaje || 'Error al procesar la baja');
+            UI.alert(err.mensaje || 'Error al procesar la baja', { type: 'danger' });
         }
     } catch (err) {
         console.error('Error:', err);

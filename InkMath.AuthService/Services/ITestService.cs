@@ -19,6 +19,7 @@ namespace InkMath.AuthService.Services
         Task<RespuestaPaginadaDto<TestDetalleResponseDto>> ObtenerTestsPaginadosPorMaestroAsync(long maestroId, ConsultaTestsPaginadaDto dto);
         Task<List<TestDetalleResponseDto>> ObtenerTestsPorMaestroAsync(long maestroId);
         Task<List<TestImpresionDto>> ObtenerDetalleTestsLoteAsync(long maestroId, List<long> testIds);
+        Task<(bool Exito, string Mensaje)> DesvincularTestDeAulaAsync(long maestroId, long testId, long aulaId);
     }
 
     public class TestService : ITestService
@@ -542,6 +543,44 @@ namespace InkMath.AuthService.Services
                     }).ToList()
                 }).ToList()
             }).ToList();
+        }
+
+        public async Task<(bool Exito, string Mensaje)> DesvincularTestDeAulaAsync(long maestroId, long testId, long aulaId)
+        {
+            // El aula debe ser del maestro y estar activa (evita desvincular en aulas ajenas)
+            var aulaValida = await _context.Aulas
+                .AnyAsync(a => a.Id == aulaId && a.MaestroId == maestroId && a.EstaActivo);
+
+            if (!aulaValida)
+                return (false, "El aula no existe, no está activa o no le pertenece.");
+
+            var relacion = await _context.AulaTests
+                .FirstOrDefaultAsync(at => at.AulaId == aulaId && at.TestId == testId);
+
+            if (relacion == null)
+                return (false, "El test no está asignado a esta aula.");
+
+            // Solo se quita la asignación: el test y los intentos de los estudiantes se conservan
+            _context.AulaTests.Remove(relacion);
+            await _context.SaveChangesAsync();
+
+            // Invalida la caché de tests del maestro (mismo patrón que AnularTestAsync)
+            await _cacheService.RemoveAsync($"tests_maestro_{maestroId}");
+
+            await _auditoriaService.RegistrarEventoDetalladoAsync(new LogAuditoria
+            {
+                FechaEvento = DateTime.UtcNow,
+                Modulo = "TESTS",
+                Accion = "DESVINCULAR_TEST",
+                EntidadAfectadaId = testId.ToString(),
+                JwtUsuarioEjecutor = maestroId.ToString(),
+                RolAuth = "Maestro",
+                JustificacionCambio = $"Test {testId} desvinculado del aula {aulaId}",
+                DatosAnteriores = new { aulaId, testId, asignado = true },
+                DatosNuevos = new { aulaId, testId, asignado = false }
+            });
+
+            return (true, "Test desvinculado del aula correctamente.");
         }
     }
 }

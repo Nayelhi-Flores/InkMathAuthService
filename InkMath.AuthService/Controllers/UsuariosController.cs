@@ -1,10 +1,11 @@
-﻿using System.Security.Claims;
-using InkMath.AuthService.Data;
+﻿using InkMath.AuthService.Data;
 using InkMath.AuthService.DTOs;
 using InkMath.AuthService.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using System.Text.RegularExpressions;
 
 namespace InkMath.AuthService.Controllers
 {
@@ -63,6 +64,10 @@ namespace InkMath.AuthService.Controllers
             return Ok(perfil);
         }
 
+        // using System.Text.RegularExpressions;
+        private static readonly Regex NombreValido =
+            new(@"^[\p{L}\p{M}][\p{L}\p{M}' .-]{1,49}$", RegexOptions.Compiled);
+
         [HttpPut("me")]
         [Authorize]
         public async Task<IActionResult> ActualizarPerfil([FromBody] ActualizarPerfilDto dto)
@@ -72,20 +77,23 @@ namespace InkMath.AuthService.Controllers
             var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Id == usuarioId && u.EstaActivo);
             if (usuario == null) return NotFound(new { mensaje = "Usuario no encontrado." });
 
-            // Actualiza el Nombre solo si se envió y no está vacío
+            const string errorNombre = "Usa solo letras, espacios, apóstrofes o guiones (de 2 a 50 caracteres).";
+
             if (!string.IsNullOrWhiteSpace(dto.Nombre))
             {
-                usuario.Nombre = dto.Nombre.Trim();
+                var nombre = Regex.Replace(dto.Nombre.Trim(), @"\s+", " ");
+                if (!NombreValido.IsMatch(nombre)) return BadRequest(new { mensaje = "Nombre inválido. " + errorNombre });
+                usuario.Nombre = nombre;
             }
 
-            // Actualiza el Apellido solo si se envió y no está vacío (ahora es opcional)
             if (!string.IsNullOrWhiteSpace(dto.Apellido))
             {
-                usuario.Apellido = dto.Apellido.Trim();
+                var apellido = Regex.Replace(dto.Apellido.Trim(), @"\s+", " ");
+                if (!NombreValido.IsMatch(apellido)) return BadRequest(new { mensaje = "Apellido inválido. " + errorNombre });
+                usuario.Apellido = apellido;
             }
 
             await _context.SaveChangesAsync();
-
             return Ok(new { mensaje = "Perfil actualizado correctamente.", usuario.Nombre, usuario.Apellido });
         }
 

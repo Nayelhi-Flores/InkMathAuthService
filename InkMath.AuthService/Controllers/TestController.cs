@@ -121,6 +121,22 @@ namespace InkMath.AuthService.Controllers
             return Ok(new { mensaje = mensaje ?? "Asignación realizada exitosamente." });
         }
 
+        [HttpDelete("{testId:long}/aulas/{aulaId:long}")]
+        [Authorize(Roles = "2")] // Maestro dueño del aula
+        public async Task<IActionResult> DesvincularTestDeAula(long testId, long aulaId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!long.TryParse(userIdClaim, out long maestroId))
+                return Unauthorized(new { mensaje = "Usuario no autenticado correctamente." });
+
+            var (exito, mensaje) = await _testService.DesvincularTestDeAulaAsync(maestroId, testId, aulaId);
+
+            if (!exito)
+                return BadRequest(new { mensaje });
+
+            return Ok(new { mensaje });
+        }
+
         [HttpGet("mis-tests")]
         [Authorize(Roles = "1,2")]
         public async Task<IActionResult> ObtenerMisTests()

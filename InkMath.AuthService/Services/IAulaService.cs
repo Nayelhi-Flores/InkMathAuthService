@@ -16,7 +16,7 @@ namespace InkMath.AuthService.Services
         Task<List<AulaDto>> ObtenerAulasPorUsuarioAsync(long usuarioId, string rolNombre);
         Task<(bool Exito, string Mensaje)> EliminarAulaLogicoAsync(long aulaId, long maestroId);
         Task<(bool exito, string mensaje)> ActualizarAulaAsync(long aulaId, long maestroId, string nuevoNombre);
-        Task<(bool Exito, string Mensaje, RecursoResponseDto? Recurso)> AgregarRecursoAsync(long maestroId,string titulo,long tipoRecursoId,string referencia, List<long>? aulaIds = null);
+        Task<(bool Exito, string Mensaje, RecursoResponseDto? Recurso)> AgregarRecursoAsync(long maestroId, string titulo, long tipoRecursoId, string referencia, List<long>? aulaIds = null);
         Task<RespuestaPaginadaDto<AulaResponseDto>> ObtenerAulasPaginadasPorMaestroAsync(long maestroId, ConsultaAulasPaginadaDto dto);
         Task<RespuestaPaginadaDto<RecursoResponseDto>> ObtenerRecursosPorMaestroPaginadosAsync(long maestroId, ConsultaRecursosPaginadaDto dto);
         Task<List<RecursoResponseDto>> ObtenerRecursosPorAulaAsync(long aulaId, long usuarioId, string rolId);
@@ -25,6 +25,7 @@ namespace InkMath.AuthService.Services
         Task<(bool Exito, string Mensaje)> SalirDeAulaAsync(long estudianteId, long aulaId);
         Task<List<TestAulaEstudianteDto>?> ObtenerTestsDeAulaParaEstudianteAsync(long aulaId, long estudianteId);
         Task<bool> EsMaestroDelAulaAsync(long aulaId, long usuarioId);
+        Task<(bool Exito, string Mensaje)> DesvincularRecursoDeAulaAsync(long maestroId, long aulaId, long recursoId);
     }
 
     public class AulaService : IAulaService
@@ -282,16 +283,30 @@ namespace InkMath.AuthService.Services
             await _context.SaveChangesAsync();
 
             // Aquí se registra el evento en MongoDB para la bitácora de auditoría
-            await _auditoriaService.RegistrarEventoAsync(
-             usuarioId: maestroId,
-             accion: "ELIMINAR_AULA_LOGICO",
-             descripcion: $"El maestro con ID {maestroId} desactivó el aula '{aula.Nombre}' (ID: {aulaId})."
-            );
+            await _auditoriaService.RegistrarEventoDetalladoAsync(new LogAuditoria
+            {
+                FechaEvento = DateTime.UtcNow,
+                Modulo = "AULA",
+                Accion = "ELIMINAR_AULA",
+                EntidadAfectadaId = aulaId.ToString(),
+                JwtUsuarioEjecutor = maestroId.ToString(),
+                RolAuth = "Maestro",
+                JustificacionCambio = $"El maestro con ID {maestroId} desactivó el aula '{aula.Nombre}' (ID: {aulaId}).",
+                DatosAnteriores = new Dictionary<string, object?>
+                {
+                    ["nombre"] = aula.Nombre,
+                    ["estaActivo"] = true
+                },
+                DatosNuevos = new Dictionary<string, object?>
+                {
+                    ["estaActivo"] = false
+                }
+            });
 
             return (true, "El aula ha sido eliminada exitosamente.");
         }
 
-        public async Task<(bool Exito, string Mensaje, RecursoResponseDto? Recurso)> AgregarRecursoAsync(long maestroId,string titulo,long tipoRecursoId,string referencia, List<long>? aulaIds = null)
+        public async Task<(bool Exito, string Mensaje, RecursoResponseDto? Recurso)> AgregarRecursoAsync(long maestroId, string titulo, long tipoRecursoId, string referencia, List<long>? aulaIds = null)
         {
             if (string.IsNullOrWhiteSpace(titulo))
                 return (false, "El título del recurso es obligatorio.", null);
@@ -348,7 +363,7 @@ namespace InkMath.AuthService.Services
             return (true, "Recurso registrado exitosamente.", dtoRespuesta);
         }
 
-        public async Task<RespuestaPaginadaDto<RecursoResponseDto>> ObtenerRecursosPorMaestroPaginadosAsync(long maestroId,ConsultaRecursosPaginadaDto dto)
+        public async Task<RespuestaPaginadaDto<RecursoResponseDto>> ObtenerRecursosPorMaestroPaginadosAsync(long maestroId, ConsultaRecursosPaginadaDto dto)
         {
             int limite = Math.Min(dto.Limite, 50);
 
@@ -425,7 +440,7 @@ namespace InkMath.AuthService.Services
                 .ToListAsync();
         }
 
-        public async Task<(bool Exito, string Mensaje)> AsignarRecursoAAulasAsync(long maestroId, List<long> recursoIds,List<long> aulaIds)
+        public async Task<(bool Exito, string Mensaje)> AsignarRecursoAAulasAsync(long maestroId, List<long> recursoIds, List<long> aulaIds)
         {
             if (recursoIds == null || !recursoIds.Any())
                 return (false, "Debe proporcionar al menos un ID de recurso.");
@@ -571,10 +586,26 @@ namespace InkMath.AuthService.Services
             inscripcion.FechaBaja = DateTimeOffset.UtcNow;
             await _context.SaveChangesAsync();
 
-            await _auditoriaService.RegistrarEventoAsync(
-                usuarioId: estudianteId,
-                accion: "SALIR_AULA_LOGICO",
-                descripcion: $"El estudiante {estudianteId} salió del aula {aulaId} (baja lógica; su progreso se conserva).");
+            await _auditoriaService.RegistrarEventoDetalladoAsync(new LogAuditoria
+            {
+                FechaEvento = DateTime.UtcNow,
+                Modulo = "AULA",
+                Accion = "SALIR_AULA",
+                EntidadAfectadaId = aulaId.ToString(),
+                JwtUsuarioEjecutor = estudianteId.ToString(),
+                RolAuth = "Estudiante",
+                JustificacionCambio = $"El estudiante {estudianteId} salió del aula {aulaId} (baja lógica; su progreso se conserva).",
+                DatosAnteriores = new Dictionary<string, object?>
+                {
+                    ["estudianteId"] = estudianteId,
+                    ["aulaId"] = aulaId,
+                    ["estaActivo"] = true
+                },
+                DatosNuevos = new Dictionary<string, object?>
+                {
+                    ["estaActivo"] = false
+                }
+            });
 
             return (true, "Saliste del aula. Tu progreso se conserva por si vuelves a entrar.");
         }
@@ -630,5 +661,41 @@ namespace InkMath.AuthService.Services
 
         public Task<bool> EsMaestroDelAulaAsync(long aulaId, long usuarioId) =>
             _context.Aulas.AsNoTracking().AnyAsync(a => a.Id == aulaId && a.MaestroId == usuarioId);
+
+        public async Task<(bool Exito, string Mensaje)> DesvincularRecursoDeAulaAsync(long maestroId, long aulaId, long recursoId)
+        {
+            // El aula debe ser del maestro y estar activa (evita desvincular en aulas ajenas)
+            var aulaValida = await _context.Aulas
+                .AnyAsync(a => a.Id == aulaId && a.MaestroId == maestroId && a.EstaActivo);
+
+            if (!aulaValida)
+                return (false, "El aula no existe, no está activa o no le pertenece.");
+
+            var relacion = await _context.AulasRecursos
+                .FirstOrDefaultAsync(ar => ar.AulaId == aulaId && ar.RecursoId == recursoId);
+
+            if (relacion == null)
+                return (false, "El recurso no está asignado a esta aula.");
+
+            // Solo se quita la asignación: el recurso sigue existiendo en la biblioteca del maestro
+            _context.AulasRecursos.Remove(relacion);
+            await _context.SaveChangesAsync();
+
+            // Auditoría (fail-safe: RegistrarEventoDetalladoAsync no lanza excepciones)
+            await _auditoriaService.RegistrarEventoDetalladoAsync(new LogAuditoria
+            {
+                FechaEvento = DateTime.UtcNow,
+                Modulo = "AULAS",
+                Accion = "DESVINCULAR_RECURSO",
+                EntidadAfectadaId = recursoId.ToString(),
+                JwtUsuarioEjecutor = maestroId.ToString(),
+                RolAuth = "Maestro",
+                JustificacionCambio = $"Recurso {recursoId} desvinculado del aula {aulaId}",
+                DatosAnteriores = new { aulaId, recursoId, asignado = true },
+                DatosNuevos = new { aulaId, recursoId, asignado = false }
+            });
+
+            return (true, "Recurso desvinculado del aula correctamente.");
+        }
     }
 }

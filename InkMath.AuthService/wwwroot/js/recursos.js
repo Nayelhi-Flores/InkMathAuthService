@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     $('btnAsignarBloque').addEventListener('click', () => {
         recursosDestino = seleccionados();
-        if (!recursosDestino.length) return alert('Selecciona al menos un recurso.');
+        if (!recursosDestino.length) return UI.alert('Selecciona al menos un recurso.');
         $('asignarResumen').innerHTML = `Recursos seleccionados: <span style="color:var(--primary-blue);font-weight:700;">${recursosDestino.length}</span>`;
         selAsignar.setItems(aulas);
         modalAsignar.classList.add('active');
@@ -196,10 +196,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!aulaIds.length) return;
         try {
             const res = await api('/api/Aulas/recursos/asignar-aulas', { method: 'POST', body: JSON.stringify({ recursoId: recursosDestino, aulaIds }) });
-            if (!res.ok) return alert(await mensajeDe(res, 'No se pudo completar la asignación.'));
-            alert((await res.json().catch(() => null))?.mensaje || 'Asignación realizada.');
+            if (!res.ok) return UI.alert(await mensajeDe(res, 'No se pudo completar la asignación.'), { type: 'danger' });
+            UI.toast((await res.json().catch(() => null))?.mensaje || 'Asignación realizada.', 'success');
             modalAsignar.classList.remove('active');
-        } catch (err) { console.error(err); alert('Error de red al asignar.'); }
+        } catch (err) { console.error(err); UI.alert('Error de red al asignar.', { type: 'danger' }); }
     });
     $('btnCancelarAsignar').addEventListener('click', () => modalAsignar.classList.remove('active'));
 
@@ -226,17 +226,17 @@ document.addEventListener('DOMContentLoaded', () => {
     $('recursoForm').addEventListener('submit', async e => {
         e.preventDefault();
         const titulo = $('recTitulo').value.trim(), tipo = recTipo.value;
-        if (!titulo) return alert('El título es obligatorio.');
+        if (!titulo) return UI.alert('El título es obligatorio.');
         const fd = new FormData();
         fd.append('Titulo', titulo);
         fd.append('TipoRecursoId', tipo);
         if (tipo === '1') {
             const file = $('recArchivo').files[0];
-            if (!file) return alert('Selecciona un archivo.');
+            if (!file) return UI.alert('Selecciona un archivo.');
             fd.append('Archivo', file);
         } else {
             const url = $('recUrl').value.trim();
-            if (!url) return alert('Ingresa la URL.');
+            if (!url) return UI.alert('Ingresa la URL.');
             fd.append('UrlExterna', url);
         }
         selRecurso.ids().forEach(id => fd.append('AulaIds', id));
@@ -244,11 +244,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const btn = $('btnGuardarRecurso'); btn.disabled = true;
         try {
             const res = await api('/api/Aulas/recursos', { method: 'POST', body: fd });
-            if (!res.ok) return alert(await mensajeDe(res, 'No se pudo guardar el recurso.'));
+            if (!res.ok) return UI.alert(await mensajeDe(res, 'No se pudo guardar el recurso.'), { type: 'danger' });
             modalRecurso.classList.remove('active');
             cache = null;
             cargar(true);
-        } catch (err) { console.error(err); alert('Error de red al guardar el recurso.'); }
+        } catch (err) { console.error(err); UI.alert('Error de red al guardar el recurso.', { type: 'danger' }); }
         finally { btn.disabled = false; }
     });
 

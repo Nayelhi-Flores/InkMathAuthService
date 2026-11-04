@@ -6,15 +6,17 @@ const SIDEBAR_STORAGE_KEY = 'sidebarColapsado';
 
 // fg = color del ícono/texto activo, bg = fondo de la "pill" activa (bottom nav móvil)
 const NAV_ITEMS = [
-    { href: 'aulas', icon: 'icons/bx-school.svg', label: 'Aulas', fg: '#D9534F', bg: '#FADADD' },
-    { href: 'evaluaciones', icon: 'icons/bx-rocket.svg', label: 'Evaluaciones', fg: '#6F4FB8', bg: '#E4DCF7' },
-    { href: 'recursos', icon: 'icons/bx-folder.svg', label: 'Recursos', fg: '#1A9BAB', bg: '#D2F1F4' },
-    { href: 'configuracion', icon: 'icons/bx-cog.svg', label: 'Configuración', fg: '#D98A1F', bg: '#FDECC8' },
+    { href: 'aulas', icon: 'icons/bx-school.svg', label: 'Aulas', fg: '#076394', bg: '#DCEFFA' },
+    { href: 'evaluaciones', icon: 'icons/bx-rocket.svg', label: 'Evaluaciones', fg: '#8F3E15', bg: '#FDE8DC' },
+    { href: 'recursos', icon: 'icons/bx-folder.svg', label: 'Recursos', fg: '#2A7A47', bg: '#DDF3E5' },
+    { href: 'configuracion', icon: 'icons/bx-cog.svg', label: 'Configuración', fg: '#6B4700', bg: '#FFF3D6' },
 ];
 
 // Navegación del panel de Administrador (body[data-nav="admin"]): el rol 1 no usa las pantallas de maestro.
 const ADMIN_NAV_ITEMS = [
-    { href: 'admin', icon: 'icons/bx-cog.svg', label: 'Panel Admin', fg: '#6F4FB8', bg: '#E4DCF7' },
+    { href: 'dashboard', icon: 'icons/bx-grid-alt.svg', label: 'Dashboard', fg: '#076394', bg: '#DCEFFA' },
+    { href: 'admin', icon: 'icons/bx-cog.svg', label: 'Panel Admin', fg: '#8F3E15', bg: '#FDE8DC' },
+    { href: 'auditoria', icon: 'icons/bx-shield-quarter.svg', label: 'Auditoría', fg: '#2A7A47', bg: '#DDF3E5' },
 ];
 
 function getNavItems() {
@@ -58,7 +60,7 @@ function initSidebar(currentPage) {
         </div>
     `;
 
-    document.getElementById('btnLogout')?.addEventListener('click', cerrarSesion);
+    document.getElementById('btnLogout')?.addEventListener('click', confirmarCierreSesion);
 
     const btnToggleLogo = document.getElementById('btnToggleLogo');
 
@@ -102,7 +104,7 @@ function initBottomNav(currentPage) {
 
     // El ícono se pinta con mask-image (inline, para que la URL relativa se
     // resuelva contra el HTML) y así toma el color del ítem activo.
-    bottomNav.innerHTML = getNavItems().map(i => {
+    const itemsHtml = getNavItems().map(i => {
         const active = currentPage === i.href;
         return `
             <a href="${i.href}" class="bottom-nav-item ${active ? 'active' : ''}"
@@ -113,6 +115,17 @@ function initBottomNav(currentPage) {
                 ${active ? `<span class="bottom-nav-label">${i.label}</span>` : ''}
             </a>`;
     }).join('');
+
+    // Cerrar sesión: en escritorio vive en el sidebar, que se oculta en vista reducida
+    const logoutHtml = `
+            <button type="button" id="btnLogoutMobile" class="bottom-nav-item bottom-nav-logout"
+                    style="--fg:#B42318; --bg:#FDE2E0;" aria-label="Cerrar sesión" title="Cerrar sesión">
+                <span class="bottom-nav-icon"
+                      style="-webkit-mask-image:url('icons/bx-power.svg'); mask-image:url('icons/bx-power.svg');"></span>
+            </button>`;
+
+    bottomNav.innerHTML = itemsHtml + logoutHtml;
+    document.getElementById('btnLogoutMobile')?.addEventListener('click', confirmarCierreSesion);
 }
 
 async function cargarPerfilTopbar() {
@@ -140,6 +153,20 @@ async function cargarPerfilTopbar() {
     } catch (err) {
         console.error('Error cargando perfil del topbar:', err);
     }
+}
+
+// ---------- Confirmación previa (usa UI.confirm si ui-modal.js está cargado) ----------
+async function confirmarCierreSesion() {
+    if (window.UI && typeof UI.confirm === 'function') {
+        const ok = await UI.confirm('¿Quieres cerrar tu sesión?', {
+            title: 'Cerrar sesión',
+            type: 'question',
+            confirmText: 'Cerrar sesión',
+            cancelText: 'Cancelar'
+        });
+        if (!ok) return;
+    }
+    await cerrarSesion();
 }
 
 // ---------- Cerrar sesión llamando al endpoint ----------

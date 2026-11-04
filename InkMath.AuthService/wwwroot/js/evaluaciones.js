@@ -137,13 +137,13 @@
     // DELETE /api/Tests/{id} está restringido a Roles="1" en el backend
     async function eliminarTests(ids) {
         // La anulación exige una justificación (10 a 500 caracteres) para la auditoría en MongoDB.
-        const justificacion = (prompt('Justificación de la anulación (10 a 500 caracteres):') || '').trim();
-        if (justificacion.length < 10 || justificacion.length > 500) return alert('La justificación debe tener entre 10 y 500 caracteres.');
+        const justificacion = await UI.prompt('Cuéntanos por qué se anula (10 a 500 caracteres).', { title: 'Anular test', min: 10, max: 500, multiline: true, confirmText: 'Anular' });
+        if (justificacion === null) return;
         const resultados = await Promise.allSettled(ids.map(id => api(`/api/Tests/${id}`, { method: 'DELETE', body: JSON.stringify({ justificacion }) })));
         const fallidos = resultados.filter(r => r.status !== 'fulfilled' || !r.value.ok);
         if (fallidos.length) {
             const prohibido = fallidos.some(r => r.status === 'fulfilled' && r.value.status === 403);
-            alert(prohibido ? 'Tu rol no tiene permiso para eliminar tests.' : `${fallidos.length} test(s) no pudieron eliminarse.`);
+            UI.alert(prohibido ? 'Tu rol no tiene permiso para eliminar tests.' : `${fallidos.length} test(s) no pudieron eliminarse.`, { type: 'danger' });
         }
         cargar(true);
     }
@@ -164,10 +164,10 @@
                     body: JSON.stringify([testId])
                 });
 
-                if (!res.ok) return alert(await mensajeDe(res, 'No se pudo cargar la vista preliminar del test.'));
+                if (!res.ok) return UI.alert(await mensajeDe(res, 'No se pudo cargar la vista preliminar del test.'), { type: 'danger' });
                 const data = await res.json();
 
-                if (!data.length) return alert('No se encontró información para este test.');
+                if (!data.length) return UI.alert('No se encontró información para este test.');
                 testActualPreview = data[0];
 
                 // Renderizar la vista previa dentro del modal
@@ -225,12 +225,12 @@
 
             } catch (err) {
                 console.error(err);
-                alert('Error de red al obtener el detalle del test.');
+                UI.alert('Error de red al obtener el detalle del test.', { type: 'danger' });
             }
             return;
         }
 
-        if (confirm('¿Eliminar este test?')) eliminarTests([testId]);
+        if (await UI.confirm('¿Eliminar este test?', { danger: true, confirmText: 'Eliminar' })) eliminarTests([testId]);
     });
 
     // Eventos para cerrar el modal de vista preliminar
@@ -301,10 +301,10 @@
         ventanaImpresion.document.close();
     }
 
-    $('btnEliminarBloque').addEventListener('click', () => {
+    $('btnEliminarBloque').addEventListener('click', async () => {
         const ids = testsSeleccionados();
-        if (!ids.length) return alert('Selecciona al menos un test.');
-        if (confirm(`¿Eliminar ${ids.length} test(s) seleccionado(s)?`)) eliminarTests(ids);
+        if (!ids.length) return UI.alert('Selecciona al menos un test.');
+        if (await UI.confirm(`¿Eliminar ${ids.length} test(s) seleccionado(s)?`, { danger: true, confirmText: 'Eliminar' })) eliminarTests(ids);
     });
 
     // ---------- Selector con datalist + chips ----------
@@ -345,7 +345,7 @@
 
     $('btnAsignarBloque').addEventListener('click', () => {
         testsDestino = testsSeleccionados();
-        if (!testsDestino.length) return alert('Selecciona al menos un test.');
+        if (!testsDestino.length) return UI.alert('Selecciona al menos un test.');
         $('lblTestsSeleccionados').innerHTML = `Tests seleccionados: <span style="color:var(--primary-blue);font-weight:700;">${testsDestino.length}</span>`;
         selector.setItems(aulas);
         modal.classList.add('active');
@@ -356,11 +356,11 @@
         if (!aulaIds.length) return;
         try {
             const res = await api('/api/Tests/asignar-test', { method: 'POST', body: JSON.stringify({ testIds: testsDestino, aulaIds }) });
-            if (!res.ok) return alert(await mensajeDe(res, 'No se pudo completar la asignación.'));
-            alert((await res.json().catch(() => null))?.mensaje || 'Asignación realizada.');
+            if (!res.ok) return UI.alert(await mensajeDe(res, 'No se pudo completar la asignación.'), { type: 'danger' });
+            UI.toast((await res.json().catch(() => null))?.mensaje || 'Asignación realizada.', 'success');
             modal.classList.remove('active');
             cargar();
-        } catch (err) { console.error(err); alert('Error de red al asignar.'); }
+        } catch (err) { console.error(err); UI.alert('Error de red al asignar.', { type: 'danger' }); }
     });
     $('btnCancelarAsignacionAulas').addEventListener('click', () => modal.classList.remove('active'));
 
@@ -443,13 +443,13 @@
         const b = e.target.closest('[data-act]'); if (!b) return;
         const card = b.closest('.pregunta-card');
         if (b.dataset.act === 'quitar-pregunta') {
-            if (preguntasBox.children.length === 1) return alert('El test debe tener al menos una pregunta.');
+            if (preguntasBox.children.length === 1) return UI.alert('El test debe tener al menos una pregunta.');
             card.remove(); numerarPreguntas();
         } else if (b.dataset.act === 'agregar-opcion') {
             card.querySelector('.q-lista').appendChild(filaOpcion(`c${card.dataset.uid}`));
         } else if (b.dataset.act === 'quitar-opcion') {
             const lista = card.querySelector('.q-lista');
-            if (lista.children.length <= 2) return alert('Se requieren al menos 2 opciones.');
+            if (lista.children.length <= 2) return UI.alert('Se requieren al menos 2 opciones.');
             const fila = b.closest('.opcion-row'), eraCorrecta = fila.querySelector('input[type=radio]').checked;
             fila.remove();
             if (eraCorrecta) lista.querySelector('input[type=radio]').checked = true;
@@ -482,10 +482,10 @@
     testForm.addEventListener('submit', async e => {
         e.preventDefault();
         const nombre = $('ntNombre').value.trim(), desde = $('ntDesde').value, hasta = $('ntHasta').value;
-        if (!nombre) return alert('El nombre del test es obligatorio.');
-        if (desde && hasta && new Date(hasta) < new Date(desde)) return alert('"Disponible hasta" no puede ser anterior a "desde".');
+        if (!nombre) return UI.alert('El nombre del test es obligatorio.');
+        if (desde && hasta && new Date(hasta) < new Date(desde)) return UI.alert('"Disponible hasta" no puede ser anterior a "desde".', { type: 'warning' });
         let preguntas;
-        try { preguntas = recolectarPreguntas(); } catch (err) { return alert(err.message); }
+        try { preguntas = recolectarPreguntas(); } catch (err) { return UI.alert(err.message, { type: 'warning' }); }
         const body = {
             maestroId: 0, nombre,
             fechaDisponibleDesde: desde ? new Date(desde).toISOString() : null,
@@ -495,10 +495,10 @@
         const btn = $('btnGuardarTest'); btn.disabled = true;
         try {
             const res = await api('/api/Tests', { method: 'POST', body: JSON.stringify(body) });
-            if (!res.ok) return alert(await mensajeDe(res, 'No se pudo crear el test.'));
-            alert('Test creado correctamente.');
+            if (!res.ok) return UI.alert(await mensajeDe(res, 'No se pudo crear el test.'), { type: 'danger' });
+            UI.toast('Test creado correctamente.', 'success');
             mostrarNuevo(false); cargar(true);
-        } catch (err) { console.error(err); alert('Error de red al guardar el test.'); }
+        } catch (err) { console.error(err); UI.alert('Error de red al guardar el test.', { type: 'danger' }); }
         finally { btn.disabled = false; }
     });
 
@@ -635,7 +635,7 @@
     // ---------- Exportar Tests Seleccionados por Lote a PDF / Impresión ----------
     async function exportarTestsPdfSeleccionados() {
         const ids = testsSeleccionados();
-        if (!ids.length) return alert('Selecciona al menos un test para exportar.');
+        if (!ids.length) return UI.alert('Selecciona al menos un test para exportar.');
 
         try {
             const res = await api('/api/Tests/detalle-lote', {
@@ -643,7 +643,7 @@
                 body: JSON.stringify(ids)
             });
 
-            if (!res.ok) return alert(await mensajeDe(res, 'No se pudieron obtener los datos para exportar.'));
+            if (!res.ok) return UI.alert(await mensajeDe(res, 'No se pudieron obtener los datos para exportar.'), { type: 'danger' });
             const testsData = await res.json();
 
             const ventanaImpresion = window.open('', '_blank');
@@ -748,7 +748,7 @@
 
         } catch (err) {
             console.error(err);
-            alert('Error de red al intentar exportar las evaluaciones.');
+            UI.alert('Error de red al intentar exportar las evaluaciones.', { type: 'danger' });
         }
     }
 

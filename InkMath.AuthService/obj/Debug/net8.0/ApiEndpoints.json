@@ -33,6 +33,27 @@
   },
   {
     "ContainingType": "InkMath.AuthService.Controllers.AulasController",
+    "Method": "DesvincularRecurso",
+    "RelativePath": "api/Aulas/{aulaId}/recursos/{recursoId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "aulaId",
+        "Type": "System.Int64",
+        "IsRequired": true
+      },
+      {
+        "Name": "recursoId",
+        "Type": "System.Int64",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.AulasController",
     "Method": "AbrirDocumentoDeAula",
     "RelativePath": "api/Aulas/{aulaId}/recursos/{recursoId}/archivo",
     "HttpMethod": "GET",
@@ -561,6 +582,47 @@
   },
   {
     "ContainingType": "DashboardController",
+    "Method": "GetAuditoriaMongo",
+    "RelativePath": "api/Dashboard/auditoria-mongo",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "fechaInicio",
+        "Type": "System.Nullable\u00601[[System.DateOnly, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "fechaFin",
+        "Type": "System.Nullable\u00601[[System.DateOnly, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DashboardController",
+    "Method": "GetIntentosDiarios",
+    "RelativePath": "api/Dashboard/intentos-diarios",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DashboardController",
+    "Method": "GetKpis",
+    "RelativePath": "api/Dashboard/kpis",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DashboardController",
     "Method": "GetReporteAnulados",
     "RelativePath": "api/Dashboard/reporte-anulados",
     "HttpMethod": "GET",
@@ -635,6 +697,16 @@
         "IsRequired": false
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "DashboardController",
+    "Method": "GetUsuariosPorRol",
+    "RelativePath": "api/Dashboard/usuarios-por-rol",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {
@@ -826,6 +898,27 @@
       {
         "Name": "dto",
         "Type": "InkMath.AuthService.DTOs.AnularTestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "InkMath.AuthService.Controllers.TestsController",
+    "Method": "DesvincularTestDeAula",
+    "RelativePath": "api/Tests/{testId}/aulas/{aulaId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "testId",
+        "Type": "System.Int64",
+        "IsRequired": true
+      },
+      {
+        "Name": "aulaId",
+        "Type": "System.Int64",
         "IsRequired": true
       }
     ],

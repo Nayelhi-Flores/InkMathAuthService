@@ -62,7 +62,7 @@
                 } else if (rolId === 3) {
                     window.location.href = 'juego.html';
                 } else if (rolId === 1) {
-                    window.location.href = 'admin';
+                    window.location.href = 'dashboard';
                 } else if (passwordError) {
                     passwordError.textContent = 'Rol de usuario no reconocido o sin asignación.';
                 }

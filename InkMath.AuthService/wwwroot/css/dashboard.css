@@ -1,0 +1,32 @@
+/* InkMath · dashboard.css  (solo lo nuevo; el resto viene de admin.css y components.css) */
+
+/* Barras: valor encima de cada barra */
+.bars { padding-top: 30px; }
+.bar { min-height: 4px; transition: height .3s ease, filter .15s; }
+.bar-value {
+    position: absolute; left: 50%; top: -24px; transform: translateX(-50%);
+    font-family: var(--font-display); font-size: .78rem; font-weight: 600; color: var(--color-text-main);
+}
+.chart-total { font-family: var(--font-display); font-size: .8rem; font-weight: 600; }
+
+/* Dona: estado sin datos y leyenda con cifras */
+.donut--empty { background: var(--color-border-light); }
+.legend-list { list-style: none; display: grid; gap: 10px; flex: 1; min-width: 150px; }
+.legend-list li { display: flex; align-items: center; gap: 10px; font-size: .88rem; font-weight: 700; color: var(--color-text-main); }
+.legend-list i { width: 12px; height: 12px; flex-shrink: 0; border-radius: 4px; background: var(--c); }
+.legend-list .legend-count { margin-left: auto; font-family: var(--font-display); color: var(--color-text-dark); }
+.legend-list .legend-pct { min-width: 44px; text-align: right; color: var(--color-text-muted); font-weight: 600; }
+
+/* Carga */
+.is-loading .bars, .is-loading .donut { opacity: .45; }
+.stat-value.is-empty { color: var(--color-text-light); }
+
+/* Auditoría (marcador de posición) */
+fieldset.admin-filters { border: 0; min-width: 0; }
+fieldset.admin-filters:disabled { opacity: .6; }
+fieldset.admin-filters:disabled input,
+fieldset.admin-filters:disabled select { cursor: not-allowed; background: var(--color-surface-card); }
+.coming-soon { display: inline-flex; align-items: center; gap: 8px; margin-left: 10px; vertical-align: middle; }
+.coming-soon { text-transform: none; }
+fieldset.admin-filters input, fieldset.admin-filters select { height: 44px; font-size: .93rem; font-weight: 600; }
+fieldset.admin-filters .btn-primary { height: 44px; }

@@ -1,3 +1,16 @@
+/* ==========================================================================
+   InkMath · ui-modal.js
+   Reemplazo visual de alert / confirm / prompt. No toca la lógica de negocio.
+
+   Uso:
+     await UI.alert('Perfil actualizado', { type: 'success' });
+     if (!(await UI.confirm('¿Eliminar 3 aulas?', { danger: true, confirmText: 'Eliminar' }))) return;
+     const motivo = await UI.prompt('Justificación', { min: 10, max: 500, multiline: true });
+     UI.toast('Guardado', 'success');
+
+   Opcional (cero cambios en tus JS para los alert): UI.installAlertShim();
+   Todo el texto se inserta con textContent (nunca innerHTML) → sin riesgo de XSS.
+   ========================================================================== */
 (function () {
     'use strict';
 
@@ -186,4 +199,7 @@
     };
 
     window.UI = UI;
+
+    // <script src="js/ui-modal.js" data-alert-shim></script>  -> los alert() existentes usan el modal
+    if (document.currentScript && document.currentScript.hasAttribute('data-alert-shim')) UI.installAlertShim();
 })();

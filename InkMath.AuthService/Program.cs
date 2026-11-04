@@ -144,7 +144,7 @@ app.Use(async (ctx, next) =>
     await next();
 });
 
-var paginasProtegidas = new[] { "admin", "aulas", "configuracion", "evaluaciones", "formulario", "recursos", "registro" };
+var paginasProtegidas = new[] { "admin", "aulas", "configuracion", "dashboard", "auditoria", "evaluaciones", "formulario", "recursos", "registro" };
 
 // Middleware de URLs limpias y reescritura hacia wwwroot
 app.Use(async (context, next) =>

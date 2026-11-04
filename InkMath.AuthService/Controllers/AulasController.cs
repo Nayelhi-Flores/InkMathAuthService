@@ -112,7 +112,7 @@ namespace InkMath.AuthService.Controllers
         [HttpPost("recursos")]
         [Consumes("multipart/form-data")]
         [Authorize(Roles = "2")]
-        public async Task<IActionResult> AgregarRecurso([FromForm] CrearRecursoMultipartDto dto,[FromServices] IFileStorageService fileStorageService)
+        public async Task<IActionResult> AgregarRecurso([FromForm] CrearRecursoMultipartDto dto, [FromServices] IFileStorageService fileStorageService)
         {
             long maestroId = ObtenerUsuarioIdDesdeClaim();
             if (maestroId == 0)
@@ -188,9 +188,25 @@ namespace InkMath.AuthService.Controllers
             return Ok(new { mensaje });
         }
 
+        [HttpDelete("{aulaId:long}/recursos/{recursoId:long}")]
+        [Authorize(Roles = "2")] // Exclusivo para rol Maestro
+        public async Task<IActionResult> DesvincularRecurso(long aulaId, long recursoId)
+        {
+            long maestroId = ObtenerUsuarioIdDesdeClaim();
+            if (maestroId == 0)
+                return Unauthorized(new { mensaje = "Token inválido o expirado." });
+
+            var (exito, mensaje) = await _aulaService.DesvincularRecursoDeAulaAsync(maestroId, aulaId, recursoId);
+
+            if (!exito)
+                return BadRequest(new { mensaje });
+
+            return Ok(new { mensaje });
+        }
+
         [HttpPost("vincular")]
         [EnableRateLimiting("VincularLimiter")]
-        [Authorize(Roles ="3")] // Estudiante
+        [Authorize(Roles = "3")] // Estudiante
         public async Task<IActionResult> VincularAlumno([FromBody] VincularAlumnoDto dto)
         {
             long usuarioId = ObtenerUsuarioIdDesdeClaim();

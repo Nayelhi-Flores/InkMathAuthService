@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría - InkMath</title>
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/ui-modal.css">
+    <script src="js/layout.js" defer></script>
+</head>
+<body data-nav="admin">
+    <div class="app-layout">
+        <aside class="sidebar"></aside>
+
+        <div class="main-wrapper">
+            <header class="topbar">
+                <div class="breadcrumb">
+                    <span class="bc-muted">Administración</span>
+                    <span class="bc-separator">&gt;</span>
+                    <span class="bc-active">Auditoría</span>
+                </div>
+                <div class="user-profile">
+                    <div class="user-info">
+                        <span class="user-name" id="profileName">Cargando...</span>
+                        <span class="user-role">-</span>
+                    </div>
+                    <div class="user-avatar" id="profileInitials">--</div>
+                    <button class="btn-notification" aria-label="Notificaciones">
+                        <img src="icons/bx-bell.svg" alt="Notificaciones">
+                    </button>
+                </div>
+            </header>
+
+            <main class="content-body">
+                <section id="accesoDenegado" class="card-container admin-denied" hidden>
+                    <h1>ACCESO RESTRINGIDO</h1>
+                    <p class="subtitle">Este panel es exclusivo del rol Administrador. Serás redirigido a tu página principal.</p>
+                </section>
+
+                <div id="panelAdmin" hidden>
+                    <div class="page-header">
+                        <div class="title-section">
+                            <h1>Auditoría</h1>
+                            <p class="subtitle">Bitácora de eventos y acciones sensibles de la plataforma</p>
+                        </div>
+                    </div>
+
+                    <div id="adminMsg" class="admin-msg admin-msg--info" role="status" aria-live="polite">
+                        Este módulo se activará cuando el API de auditoría esté disponible. La estructura ya está lista.
+                    </div>
+
+                    <!-- Resumen  ·  TODO API: rellenar #audEventos, #audFallidos, #audAnulaciones -->
+                    <section class="stat-grid" aria-label="Resumen de auditoría">
+                        <article class="stat-card">
+                            <div class="stat-icon">
+                                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4l3 2" /><circle cx="12" cy="12" r="9" /></svg>
+                            </div>
+                            <div><div id="audEventos" class="stat-value is-empty">—</div><div class="stat-label">Eventos en el periodo</div></div>
+                        </article>
+                        <article class="stat-card stat-card--orange">
+                            <div class="stat-icon">
+                                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+                            </div>
+                            <div><div id="audFallidos" class="stat-value is-empty">—</div><div class="stat-label">Inicios de sesión fallidos</div></div>
+                        </article>
+                        <article class="stat-card stat-card--yellow">
+                            <div class="stat-icon">
+                                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
+                            </div>
+                            <div><div id="audAnulaciones" class="stat-value is-empty">—</div><div class="stat-label">Tests anulados</div></div>
+                        </article>
+                    </section>
+
+                    <div class="card-container">
+                        <!-- Filtros  ·  TODO API: quitar `disabled` del fieldset y del botón cuando exista el endpoint -->
+                        <form id="formAuditoria" novalidate>
+                            <fieldset class="admin-filters" disabled>
+                                <div class="form-group">
+                                    <label for="audDesde">Fecha inicio</label>
+                                    <input type="date" id="audDesde">
+                                </div>
+                                <div class="form-group">
+                                    <label for="audHasta">Fecha fin</label>
+                                    <input type="date" id="audHasta">
+                                </div>
+                                <div class="form-group">
+                                    <label for="audUsuario">ID de usuario</label>
+                                    <input type="number" id="audUsuario" min="1" step="1" placeholder="Ej. 20002">
+                                </div>
+                                <div class="form-group">
+                                    <label for="audAccion">Acción</label>
+                                    <select id="audAccion">
+                                        <option value="">Todas</option>
+                                        <option value="login">Inicio de sesión</option>
+                                        <option value="creacion">Creación</option>
+                                        <option value="modificacion">Modificación</option>
+                                        <option value="anulacion">Anulación / baja</option>
+                                        <option value="acceso_denegado">Acceso denegado</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="audModulo">Módulo</label>
+                                    <select id="audModulo">
+                                        <option value="">Todos</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <button type="submit" id="btnAuditoriaBuscar" class="btn-primary">Buscar</button>
+                                </div>
+                            </fieldset>
+                        </form>
+
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <caption class="sr-only">Registro de auditoría</caption>
+                                <thead>
+                                    <tr>
+                                        <th>Fecha y hora</th>
+                                        <th>Usuario</th>
+                                        <th class="text-center">Rol</th>
+                                        <th>Acción</th>
+                                        <th>Módulo</th>
+                                        <th>Detalle</th>
+                                        <th class="text-center">Resultado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="auditoriaBody">
+                                    <tr>
+                                        <td colspan="7">
+                                            <div class="empty-state">
+                                                <span class="feed-dot feed-dot--yellow" aria-hidden="true">
+                                                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v5c0 5 3.4 8.3 8 10 4.6-1.7 8-5 8-10V6z" /><path d="M9 12l2 2 4-4" /></svg>
+                                                </span>
+                                                Aún no hay registros de auditoría.
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Paginación  ·  TODO API: pintarla igual que en admin.js (pintarPaginacion) -->
+                    <footer class="pagination-footer" id="auditoriaPag">
+                        <div class="pagination-info">Mostrando 0-0 de 0 registros</div>
+                        <div class="pagination-controls">
+                            <button type="button" class="pagination-arrow" aria-label="Página anterior" disabled>&lt;</button>
+                            <span class="page-text">Página</span>
+                            <button type="button" class="page-badge active" disabled>1</button>
+                            <span class="page-text">de 1</span>
+                            <button type="button" class="pagination-arrow" aria-label="Página siguiente" disabled>&gt;</button>
+                        </div>
+                    </footer>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="js/ui-modal.js"></script>
+    <script src="js/auditoria.js"></script>
+</body>
+</html>
