@@ -1,4 +1,9 @@
 services:
+  redis_cache:
+    image: redis:alpine
+    container_name: inkmath_redis
+    restart: always
+
   # Servicio 1: Base de datos PostgreSQL
   postgres:
     image: postgres:16-alpine
@@ -28,10 +33,14 @@ services:
       - .env
     ports:
       - "8080:8080"
+    volumes:
+      - ./Uploads:/app/Uploads
     restart: always
     depends_on:
       postgres:
         condition: service_healthy
+      redis_cache:
+        condition: service_started
 
 volumes:
   postgres_data:
