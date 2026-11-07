@@ -172,15 +172,20 @@ app.UseDefaultFiles();
 app.UseStaticFiles(); app.UseStaticFiles(new StaticFileOptions
 {
     ContentTypeProvider = provider
-}); 
-app.UseStaticFiles(new StaticFileOptions { 
+});
+var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "Uploads");
+if (!Directory.Exists(uploadsPath))
+{
+    Directory.CreateDirectory(uploadsPath);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
     ContentTypeProvider = provider,
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(builder.Environment.ContentRootPath, "Uploads")),
+    FileProvider = new PhysicalFileProvider(uploadsPath),
     RequestPath = "/uploads",
     OnPrepareResponse = ctx =>
     {
-        // Cabeceras adicionales de caché o seguridad para archivos estáticos si lo requieres
         ctx.Context.Response.Headers["Cache-Control"] = "no-cache";
     }
 });

@@ -52,7 +52,7 @@
               "RelativeDocumentMoniker": "InkMath.AuthService\\Controllers\\TestController.cs",
               "ToolTip": "C:\\Users\\Kathe\\source\\repos\\InkMath.AuthService\\InkMath.AuthService\\Controllers\\TestController.cs",
               "RelativeToolTip": "InkMath.AuthService\\Controllers\\TestController.cs",
-              "ViewState": "AgIAAH0AAAAAAAAAAAA8wLwAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAH4AAAAAAAAAAAAmwIwAAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-11-04T21:52:02.221Z",
               "EditorCaption": ""
@@ -67,8 +67,7 @@
               "RelativeToolTip": "InkMath.AuthService\\Services\\ITestService.cs",
               "ViewState": "AgIAAPIBAAAAAAAAAAAIwEoCAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-04T21:51:33.16Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-11-04T21:51:33.16Z"
             },
             {
               "$type": "Document",
@@ -80,8 +79,7 @@
               "RelativeToolTip": "InkMath.AuthService\\Services\\IAulaService.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAALwCAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-04T21:50:45.863Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-11-04T21:50:45.863Z"
             },
             {
               "$type": "Document",
@@ -93,8 +91,7 @@
               "RelativeToolTip": "InkMath.AuthService\\Controllers\\AulasController.cs",
               "ViewState": "AgIAAL0AAAAAAAAAAAAswMkAAAAnAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-04T21:49:52.469Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-11-04T21:49:52.469Z"
             },
             {
               "$type": "Document",
@@ -106,8 +103,7 @@
               "RelativeToolTip": "InkMath.AuthService\\wwwroot\\js\\aulas.js",
               "ViewState": "AgIAAD0BAAAAAAAAAAAwwIMAAAAcAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
-              "WhenOpened": "2026-11-04T21:48:14.536Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-11-04T21:48:14.536Z"
             },
             {
               "$type": "Document",
@@ -143,8 +139,7 @@
               "RelativeToolTip": "InkMath.AuthService\\Controllers\\UsuariosController.cs",
               "ViewState": "AgIAAHcAAAAAAAAAAAAqwH4AAAAiAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-04T15:50:28.461Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-11-04T15:50:28.461Z"
             }
           ]
         }
